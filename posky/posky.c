@@ -97,3 +97,14 @@ struct miiskira_candy__posky_return_s* miiskira_candy_append__posky_return(struc
 	}
 	return NULL;
 }
+
+posky_candy_s* miiskira_candy_alloc__posky_clear_lonely(void)
+{
+	posky_candy_s *restrict r;
+	if ((r = (posky_candy_s *) refer_alloz(sizeof(posky_candy_s))))
+	{
+		r->target = p->address;
+		r->type = miiskira$type$posky_clear_lonely;
+	}
+	return r;
+}

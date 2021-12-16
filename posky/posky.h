@@ -67,5 +67,6 @@ struct miiskira_candy__posky_task_s* miiskira_candy_alloc__posky_task(uintptr_t 
 struct miiskira_candy__posky_return_s* miiskira_candy_alloc__posky_return(uintptr_t size);
 struct miiskira_candy__posky_task_s* miiskira_candy_append__posky_task(struct miiskira_candy__posky_task_s *restrict candy, enum miiskira_posky_task_id_t id, const char *adorable_name, uint64_t adorable_address, const char *group_name, uint64_t group_address, uintptr_t queue_size, refer_t lady, miiskira_posky_initial_adorable_f initial);
 struct miiskira_candy__posky_return_s* miiskira_candy_append__posky_return(struct miiskira_candy__posky_return_s *restrict candy, enum miiskira_posky_task_status_t status, const struct miiskira_posky_task_s *task, posky_adorable_s *adorable, uint64_t address, yaw_signal_s *signal);
+posky_candy_s* miiskira_candy_alloc__posky_clear_lonely(void);
 
 #endif
