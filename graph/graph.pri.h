@@ -2,7 +2,9 @@
 #define _miiskira_graph_pri_h_
 
 #include "graph.h"
+#include <posky.h>
 #include <yaw.h>
+#include <hashmap.h>
 #include <graph/graph.h>
 #include <graph/allocator.h>
 #include <graph/support.h>
@@ -27,10 +29,21 @@ struct miiskira_graph_device_s {
 	const graph_device_queue_t *select_queue_transfer;
 };
 
+struct miiskira_graph_present_s {
+	miiskira_graph_present_f present;
+	refer_t pri;
+	uint32_t width;
+	uint32_t height;
+	graph_format_t format;
+};
+
 struct miiskira_graph_s {
 	graph_s *graph;
 	struct miiskira_graph_device_s *device;
+	hashmap_t present;  // name => miiskira_graph_present_s
 };
+
+void inner_miiskira_graph_hashmap_free_func(hashmap_vlist_t *restrict vl);
 
 // debug_level:
 //     0 none
@@ -40,5 +53,7 @@ struct miiskira_graph_s {
 //     4 verbose
 //     5 dump api
 struct miiskira_graph_s* inner_miiskira_graph_alloc(mlog_s *ml, uint32_t debug_level);
+
+struct miiskira_graph_s* inner_miiskira_graph_register_posky(struct miiskira_graph_s *restrict graph, uintptr_t queue_size);
 
 #endif

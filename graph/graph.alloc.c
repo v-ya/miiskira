@@ -1,5 +1,10 @@
 #include "graph.pri.h"
 
+void inner_miiskira_graph_hashmap_free_func(hashmap_vlist_t *restrict vl)
+{
+	if (vl->value) refer_free(vl->value);
+}
+
 // create
 
 static graph_s* inner_miiskira_graph_create_graph(mlog_s *ml, uint32_t debug_level)
@@ -86,7 +91,11 @@ static const graph_device_t* inner_miiskira_graph_device_select_device(const gra
 	}
 	d = d_gpu_d?d_gpu_d:(d_gpu_i?d_gpu_i:d_cpu);
 	if (d && debug_level)
-		graph_device_dump(d);
+	{
+		if (debug_level <= 3)
+			graph_device_properties_header_dump(d);
+		else graph_device_dump(d);
+	}
 	return d;
 }
 
@@ -202,6 +211,7 @@ static struct miiskira_graph_device_s* inner_miiskira_graph_device_alloc(graph_s
 
 static void inner_miiskira_graph_free_func(struct miiskira_graph_s *restrict r)
 {
+	hashmap_uini(&r->present);
 	if (r->device) refer_free(r->device);
 	if (r->graph) refer_free(r->graph);
 }
@@ -212,6 +222,8 @@ struct miiskira_graph_s* inner_miiskira_graph_alloc(mlog_s *ml, uint32_t debug_l
 	if ((r = (struct miiskira_graph_s *) refer_alloz(sizeof(struct miiskira_graph_s))))
 	{
 		refer_set_free(r, (refer_free_f) inner_miiskira_graph_free_func);
+		if (!hashmap_init(&r->present))
+			goto label_fail;
 		if (!(r->graph = inner_miiskira_graph_create_graph(ml, debug_level)))
 			goto label_fail;
 		if (!(r->device = inner_miiskira_graph_device_alloc(r->graph, debug_level)))
