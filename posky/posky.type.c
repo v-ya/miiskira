@@ -2,6 +2,7 @@
 
 uint32_t miiskira$type$posky_task;
 uint32_t miiskira$type$posky_return;
+uint32_t miiskira$type$posky_clear_lonely;
 
 uint32_t miiskira_posky_gen_type(void)
 {

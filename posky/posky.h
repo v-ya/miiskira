@@ -57,6 +57,7 @@ struct miiskira_candy__posky_return_s {
 
 extern uint32_t miiskira$type$posky_task;
 extern uint32_t miiskira$type$posky_return;
+extern uint32_t miiskira$type$posky_clear_lonely;
 
 uint32_t miiskira_posky_gen_type(void);
 

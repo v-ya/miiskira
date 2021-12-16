@@ -310,10 +310,17 @@ static const posky_candy_s* inner_miiskira_posky_type__posky_return(struct miisk
 	return &ret->candy;
 }
 
+static const posky_candy_s* inner_miiskira_posky_type__posky_clear_lonely(struct miiskira_posky_lady_s *restrict lady, const posky_candy_s *restrict candy)
+{
+	posky_clear_lonely_adorable(lady->p->posky);
+	return candy;
+}
+
 static struct miiskira_posky_s* inner_miiskira_posky_initial_adorable(struct miiskira_posky_s *restrict r)
 {
 	if (posky_adorable_set_type_way(r->adorable, miiskira$type$posky_task, (posky_feeding_f) inner_miiskira_posky_type__posky_create) &&
-		posky_adorable_set_type_way(r->adorable, miiskira$type$posky_return, (posky_feeding_f) inner_miiskira_posky_type__posky_return))
+		posky_adorable_set_type_way(r->adorable, miiskira$type$posky_return, (posky_feeding_f) inner_miiskira_posky_type__posky_return) &&
+		posky_adorable_set_type_way(r->adorable, miiskira$type$posky_clear_lonely, (posky_feeding_f) inner_miiskira_posky_type__posky_clear_lonely))
 		return r;
 	return NULL;
 }
