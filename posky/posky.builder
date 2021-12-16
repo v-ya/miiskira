@@ -20,4 +20,13 @@
 	"finally" @string => "miiskira_posky_finally"
 
 ["kiya.export"]
+	"miiskira$type$posky_task" @null
+	"miiskira$type$posky_return" @null
+	"miiskira$type$posky_clear_lonely" @null
 	"miiskira_posky_gen_type" @null
+	"miiskira_posky_feeding" @null
+	"miiskira_candy_alloc__posky_task" @null
+	"miiskira_candy_alloc__posky_return" @null
+	"miiskira_candy_append__posky_task" @null
+	"miiskira_candy_append__posky_return" @null
+	"miiskira_candy_alloc__posky_clear_lonely" @null
