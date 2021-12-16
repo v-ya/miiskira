@@ -6,9 +6,9 @@
 [$ "kiya" kiya]
 	"name" @string => "miiskira.graph"
 [kiya "like"]
-	"import.refer" @null
-	"import.yaw" @null
 	"miiskira.posky" @null
+	"import.mlog" @null
+	"import.graph" @null
 [kiya "dylink"]
 	"graph" @"dylink" => &"graph.dy"
 # [kiya "parse"]
