@@ -24,6 +24,8 @@ static void inner_miiskira_candy__posky_return_free_func(struct miiskira_candy__
 			refer_free(r->ret[i].task);
 		if (r->ret[i].adorable)
 			refer_free(r->ret[i].adorable);
+		if (r->ret[i].signal)
+			refer_free(r->ret[i].signal);
 	}
 }
 
