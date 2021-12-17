@@ -55,6 +55,7 @@ struct miiskira_candy__posky_return_s {
 	struct miiskira_posky_return_t ret[];
 };
 
+extern uint64_t miiskira$posky$stamp;
 extern uint32_t miiskira$type$posky_task;
 extern uint32_t miiskira$type$posky_return;
 extern uint32_t miiskira$type$posky_clear_lonely;
@@ -62,6 +63,7 @@ extern uint32_t miiskira$type$posky_clear_lonely;
 uint32_t miiskira_posky_gen_type(void);
 
 void miiskira_posky_feeding(posky_candy_s *restrict candy);
+void miiskira_posky_feeding_proxy_adorable(posky_candy_s *restrict candy, const char *restrict name);
 
 struct miiskira_candy__posky_task_s* miiskira_candy_alloc__posky_task(uintptr_t size);
 struct miiskira_candy__posky_return_s* miiskira_candy_alloc__posky_return(uintptr_t size);

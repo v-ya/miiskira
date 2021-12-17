@@ -5,6 +5,27 @@ void miiskira_posky_feeding(posky_candy_s *restrict candy)
 	posky_feeding(p->posky, candy);
 }
 
+static void inner_miiskira_candy__posky_proxy_free_func(struct miiskira_candy__posky_proxy_s *restrict r)
+{
+	if (r->gift) refer_free(r->gift);
+}
+
+void miiskira_posky_feeding_proxy_adorable(posky_candy_s *restrict candy, const char *restrict name)
+{
+	struct miiskira_candy__posky_proxy_s *restrict r;
+	if (candy && name && (r = (struct miiskira_candy__posky_proxy_s *) refer_alloz(sizeof(struct miiskira_candy__posky_proxy_s))))
+	{
+		refer_set_free(r, (refer_free_f) inner_miiskira_candy__posky_proxy_free_func);
+		r->candy.target = p->address;
+		r->candy.type = miiskira$type$posky_proxy_adorable;
+		r->candy.stamp = miiskira$posky$stamp;
+		r->name = name;
+		r->gift = (posky_candy_s *) refer_save(candy);
+		posky_feeding(p->posky, &r->candy);
+		refer_free(r);
+	}
+}
+
 static void inner_miiskira_candy__posky_task_free_func(struct miiskira_candy__posky_task_s *restrict r)
 {
 	uintptr_t i;
@@ -37,6 +58,7 @@ struct miiskira_candy__posky_task_s* miiskira_candy_alloc__posky_task(uintptr_t 
 		refer_set_free(r, (refer_free_f) inner_miiskira_candy__posky_task_free_func);
 		r->candy.target = p->address;
 		r->candy.type = miiskira$type$posky_task;
+		r->candy.stamp = miiskira$posky$stamp;
 		r->size = size;
 	}
 	return r;
