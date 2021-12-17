@@ -9,6 +9,7 @@
 	"miiskira.posky" @null
 	"import.mlog" @null
 	"import.hashmap" @null
+	"import.pocket" @null
 	"import.graph" @null
 [kiya "dylink"]
 	"graph" @"dylink" => &"graph.dy"

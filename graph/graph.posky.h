@@ -3,6 +3,8 @@
 
 #include "graph.pri.h"
 
+struct pocket_s;
+
 struct miiskira_candy__graph_present_create_s {
 	posky_candy_s candy;
 	refer_string_t name;
@@ -26,6 +28,11 @@ struct miiskira_candy__graph_present_resize_s {
 struct miiskira_candy__graph_present_do_s {
 	posky_candy_s candy;
 	refer_string_t name;
+};
+
+struct miiskira_candy__graph_pocket_s {
+	posky_candy_s candy;
+	struct pocket_s *pocket;
 };
 
 const posky_candy_s* inner_miiskira_graph__present_create(struct miiskira_graph_s *restrict lady, const struct miiskira_candy__graph_present_create_s *restrict candy);

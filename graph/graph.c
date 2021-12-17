@@ -7,7 +7,7 @@ static inline void inner_graph_candy_initial(posky_candy_s *restrict candy, uint
 	candy->report = report;
 	candy->type = type;
 	candy->level = 0;
-	candy->stamp = 0;
+	candy->stamp = miiskira$posky$stamp;
 }
 
 // graph_present_create
@@ -37,7 +37,7 @@ static void inner_miiskira_graph_present_create(uint64_t address, refer_string_t
 
 void miiskira_graph_present_create_bgra(uint64_t address, refer_string_t name, miiskira_graph_present_f present_func, refer_t pri)
 {
-	inner_miiskira_graph_present_create(address, name, present_func, pri, graph_format_r8g8b8a8_unorm);
+	inner_miiskira_graph_present_create(address, name, present_func, pri, graph_format_b8g8r8a8_unorm);
 }
 
 // graph_present_destroy

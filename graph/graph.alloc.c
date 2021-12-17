@@ -212,6 +212,7 @@ static struct miiskira_graph_device_s* inner_miiskira_graph_device_alloc(graph_s
 static void inner_miiskira_graph_free_func(struct miiskira_graph_s *restrict r)
 {
 	hashmap_uini(&r->present);
+	hashmap_uini(&r->layout);
 	if (r->device) refer_free(r->device);
 	if (r->graph) refer_free(r->graph);
 }
@@ -222,8 +223,8 @@ struct miiskira_graph_s* inner_miiskira_graph_alloc(mlog_s *ml, uint32_t debug_l
 	if ((r = (struct miiskira_graph_s *) refer_alloz(sizeof(struct miiskira_graph_s))))
 	{
 		refer_set_free(r, (refer_free_f) inner_miiskira_graph_free_func);
-		if (!hashmap_init(&r->present))
-			goto label_fail;
+		if (!hashmap_init(&r->layout)) goto label_fail;
+		if (!hashmap_init(&r->present)) goto label_fail;
 		if (!(r->graph = inner_miiskira_graph_create_graph(ml, debug_level)))
 			goto label_fail;
 		if (!(r->device = inner_miiskira_graph_device_alloc(r->graph, debug_level)))

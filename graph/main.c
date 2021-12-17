@@ -1,4 +1,5 @@
 #include "graph.pri.h"
+#include "graph.tag.h"
 #include "../posky/posky.h"
 
 struct miiskira_graph_s *graph;
@@ -8,6 +9,9 @@ uint32_t miiskira$type$graph_present_create;
 uint32_t miiskira$type$graph_present_destroy;
 uint32_t miiskira$type$graph_present_resize;
 uint32_t miiskira$type$graph_present_do;
+// inner tag parse
+uint32_t miiskira$type$graph_tag_render;
+uint32_t miiskira$type$graph_tag_model;
 
 static void miiskira_graph_initial_type(void)
 {
@@ -15,6 +19,8 @@ static void miiskira_graph_initial_type(void)
 	miiskira$type$graph_present_destroy = miiskira_posky_gen_type();
 	miiskira$type$graph_present_resize = miiskira_posky_gen_type();
 	miiskira$type$graph_present_do = miiskira_posky_gen_type();
+	miiskira$type$graph_tag_render = miiskira_posky_gen_type();
+	miiskira$type$graph_tag_model = miiskira_posky_gen_type();
 }
 
 static uint32_t miiskira_graph_initial_get_debug_level(uintptr_t argc, const char *const argv[])
@@ -34,7 +40,10 @@ const char* miiskira_graph_initial(uintptr_t argc, const char *const argv[])
 	if ((graph = inner_miiskira_graph_alloc($mlog, debug_level)))
 	{
 		if (inner_miiskira_graph_register_posky(graph, 1024))
-			return NULL;
+		{
+			if (miiskira_graph_initial_tag())
+				return NULL;
+		}
 		refer_free(graph);
 	}
 	return "miiskira.graph.initial";
@@ -42,5 +51,6 @@ const char* miiskira_graph_initial(uintptr_t argc, const char *const argv[])
 
 void miiskira_graph_finally(void)
 {
+	miiskira_graph_finally_tag();
 	refer_free(graph);
 }

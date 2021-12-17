@@ -29,6 +29,12 @@ struct miiskira_graph_device_s {
 	const graph_device_queue_t *select_queue_transfer;
 };
 
+// 数据布局 用于 vertex 和 uniform
+struct miiskira_graph_layout_s {
+	;
+};
+
+// 呈现
 struct miiskira_graph_present_s {
 	miiskira_graph_present_f present;
 	refer_t pri;
@@ -40,8 +46,12 @@ struct miiskira_graph_present_s {
 struct miiskira_graph_s {
 	graph_s *graph;
 	struct miiskira_graph_device_s *device;
+	hashmap_t layout;   // name => miiskira_graph_layout_s
 	hashmap_t present;  // name => miiskira_graph_present_s
 };
+
+extern uint32_t miiskira$type$graph_tag_render;
+extern uint32_t miiskira$type$graph_tag_model;
 
 void inner_miiskira_graph_hashmap_free_func(hashmap_vlist_t *restrict vl);
 
