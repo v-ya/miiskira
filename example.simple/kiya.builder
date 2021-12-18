@@ -10,6 +10,7 @@
 	"miiskira.graph" @null
 	"xwin.pool" @null
 	"console.main" @null
+	"miiskira.console.log" @null
 [kiya "dylink"]
 	"main" @"dylink" => &"main.dy"
 [kiya "parse"]
