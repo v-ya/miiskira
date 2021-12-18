@@ -1,0 +1,17 @@
+shader-compiler	?= glslc
+pocket-builder	?= pocket-builder
+clear-me	?= clear-render
+
+%.vert.spv: %.glsl
+	${shader-compiler} -fshader-stage=vertex '$<' -o '$@'
+%.frag.spv: %.glsl
+	${shader-compiler} -fshader-stage=fragment '$<' -o '$@'
+
+%.render:
+	${pocket-builder} '$<' -o '$@'
+
+.PHONY: target clear clear-render
+clear: ${clear-me}
+
+clear-render:
+	rm -f *.spv *.render
