@@ -23,10 +23,14 @@ const posky_candy_s* inner_miiskira_graph__present_create(struct miiskira_graph_
 			r->pri = refer_save(candy->pri);
 			r->format = candy->format;
 			if (hashmap_set_name(&lady->present, candy->name, r, inner_miiskira_graph_hashmap_free_func))
+			{
+				log_info("[graph] create present (%s)", candy->name);
 				return &candy->candy;
+			}
 			refer_free(r);
 		}
 	}
+	log_warning("[graph] create present (%s) fail", candy->name?candy->name:"");
 	return NULL;
 }
 
@@ -34,6 +38,7 @@ const posky_candy_s* inner_miiskira_graph__present_destroy(struct miiskira_graph
 {
 	if (candy->name)
 	{
+		log_info("[graph] destroy present (%s)", candy->name);
 		hashmap_delete_name(&lady->present, candy->name);
 		return &candy->candy;
 	}
@@ -45,6 +50,7 @@ const posky_candy_s* inner_miiskira_graph__present_resize(struct miiskira_graph_
 	struct miiskira_graph_present_s *restrict r;
 	if (candy->name && (r = inner_miiskira_graph_present_find(lady, candy->name)))
 	{
+		log_verbose("[graph] resize present (%s) %ux%u => %ux%u", candy->name, r->width, r->height, candy->width, candy->height);
 		r->width = candy->width;
 		r->height = candy->height;
 		return &candy->candy;
@@ -61,5 +67,6 @@ const posky_candy_s* inner_miiskira_graph__present_do(struct miiskira_graph_s *r
 		/// TODO: send report
 		return &candy->candy;
 	}
+	log_warning("[graph] do present (%s) fail", candy->name?candy->name:"");
 	return NULL;
 }

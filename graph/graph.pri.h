@@ -2,6 +2,7 @@
 #define _miiskira_graph_pri_h_
 
 #include "graph.h"
+#include "../log/log.h"
 #include <posky.h>
 #include <yaw.h>
 #include <hashmap.h>

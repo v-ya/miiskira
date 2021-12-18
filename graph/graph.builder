@@ -6,6 +6,7 @@
 [$ "kiya" kiya]
 	"name" @string => "miiskira.graph"
 [kiya "like"]
+	"miiskira.log" @null
 	"miiskira.posky" @null
 	"import.mlog" @null
 	"import.hashmap" @null
