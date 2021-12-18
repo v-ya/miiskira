@@ -3,6 +3,7 @@
 
 #include "posky.h"
 #include "../define.h"
+#include "../log/log.h"
 #include <queue/queue_ring.h>
 #include <vattr.h>
 

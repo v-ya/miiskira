@@ -113,6 +113,7 @@ const posky_candy_s* inner_miiskira_posky_gift__posky_task(struct miiskira_posky
 				goto label_fail;
 			default:
 				label_fail:
+				log_warning("[posky] posky_task fail");
 				if (r) miiskira_candy_append__posky_return(r, miiskira_posky_task_status__fail, t, NULL, 0, NULL);
 				break;
 		}

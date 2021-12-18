@@ -6,7 +6,11 @@ const posky_candy_s* inner_miiskira_posky_gift__posky_proxy_adorable(struct miis
 	if (candy->name && candy->gift && (adorable = posky_find_adorable(lady->p->posky, candy->name, 0)))
 	{
 		if (posky_adorable_surprise(adorable, candy->gift))
+		{
+			log_verbose("[posky] posky_proxy_adorable okay (%s:%016lx) type: %u", candy->name, posky_adorable_address(adorable), candy->gift->type);
 			return &candy->candy;
+		}
 	}
+	log_warning("[posky] posky_proxy_adorable fail (%s)", candy->name?candy->name:"");
 	return NULL;
 }

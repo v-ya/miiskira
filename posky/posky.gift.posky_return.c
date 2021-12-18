@@ -64,7 +64,8 @@ const posky_candy_s* inner_miiskira_posky_gift__posky_return(struct miiskira_pos
 				{
 					if ((v = inner_miiskira_posky_adorable_alloc(r->adorable, r->signal)))
 					{
-						vattr_set(pri->pool, t->adorable_name, v);
+						if (vattr_set(pri->pool, t->adorable_name, v))
+							log_info("[posky] create adorable (%s:%016lx)", t->adorable_name, r->address);
 						refer_free(v);
 					}
 				}
@@ -72,7 +73,10 @@ const posky_candy_s* inner_miiskira_posky_gift__posky_return(struct miiskira_pos
 			else if (t->id == miiskira_posky_task_id__delete_adorable)
 			{
 				if (t->adorable_name)
+				{
+					log_info("[posky] delete adorable (%s)", t->adorable_name);
 					vattr_delete(pri->pool, t->adorable_name);
+				}
 				else
 				{
 					vattr_vlist_t *restrict vl, *restrict next;
@@ -80,7 +84,10 @@ const posky_candy_s* inner_miiskira_posky_gift__posky_return(struct miiskira_pos
 					while ((vl = next))
 					{
 						if ((v = (struct miiskira_posky_adorable_s *) vl->value) && v->address == t->adorable_address)
+						{
+							log_info("[posky] delete adorable (%s:%016lx)", vl->vslot->key, v->address);
 							vattr_delete_vlist(vl);
+						}
 						next = vl->vattr_next;
 					}
 				}

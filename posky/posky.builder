@@ -6,6 +6,7 @@
 [$ "kiya" kiya]
 	"name" @string => "miiskira.posky"
 [kiya "like"]
+	"miiskira.log" @null
 	"import.refer" @null
 	"import.queue" @null
 	"import.posky" @null
