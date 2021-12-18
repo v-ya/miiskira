@@ -6,6 +6,7 @@
 #include <yaw.h>
 #include <hashmap.h>
 #include <vattr.h>
+#include <exbuffer.h>
 #include <graph/graph.h>
 #include <graph/allocator.h>
 #include <graph/support.h>
@@ -34,13 +35,22 @@ struct miiskira_graph_device_s {
 struct miiskira_graph_parser_s {
 	hashmap_t render;
 	hashmap_t model;
+	hashmap_t layout_type;
 	fsys_rpath_s *rpath;
+};
+
+struct miiskira_graph_range_s {
+	uintptr_t offset;
+	uintptr_t size;
+	uintptr_t type;
+	uintptr_t type_size;
 };
 
 // 数据布局 用于 vertex 和 uniform
 struct miiskira_graph_layout_s {
-	vattr_s *area;
 	uintptr_t size;
+	vattr_s *area;   // name => miiskira_graph_range_s
+	exbuffer_t default_data;
 };
 
 // 呈现
@@ -92,5 +102,11 @@ hashmap_t* inner_miiskira_graph_initial_render_parser(hashmap_t *restrict parser
 // inner.parser.c
 
 struct miiskira_graph_s* inner_miiskira_graph_parse_pocket(struct miiskira_graph_s *restrict r, const hashmap_t *restrict parser, struct pocket_s *restrict pocket);
+
+// inner.layout.c
+
+hashmap_t* inner_miiskira_graph_initial_layout_type(hashmap_t *restrict layout_type);
+struct miiskira_graph_layout_s* inner_miiskira_graph_layout_alloc(void);
+struct miiskira_graph_layout_s* inner_miiskira_graph_layout_append(struct miiskira_graph_layout_s *restrict layout, const hashmap_t *restrict layout_type, const char *restrict name, const char *restrict type, const void *data, uintptr_t size);
 
 #endif

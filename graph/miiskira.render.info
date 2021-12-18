@@ -4,19 +4,26 @@
 ["layout" layout]
 	# 新添加的布局名称 (name: 布局引用唯一标识符)
 	[layout "name"]
+		# tag 可选的取值
+		#     "float"  "vec2"  "vec3"  "vec4"
+		#     "double" "dvec2" "dvec3" "dvec4"
+		#     "int"    "ivec2" "ivec3" "ivec4"
+		#     "uint"   "uvec2" "uvec3" "uvec4"
+		#              "mat2"  "mat3"  "mat4"
+		#              "dmat2" "dmat3" "dmat4"
 		# 下方该实例布局为
 		# struct {
 		#     float pos[3];
 		#     float tex[2];
 		#     struct {
 		#         uint32_t index[1];
-		#         float size[2];
+		#         float size[3];
 		#     } attr;
 		# }
-		"pos" @f32 => (f32[3]) {}
-		"tex" @f32 => (f32[2]) {}
-		"attr" "index" @u32 => (u32[1]) {}
-		"attr" "size" @f32 => (f32[3]) {}
+		"pos" @"vec3" => (f32[3]) {}
+		"tex" @"vec2" => (f32[2]) {}
+		"attr" "index" @"uint" => (u32[1]) {}
+		"attr" "size" @"float" => (f32[3]) {}
 		# ...
 		# 可引用子域 "pos" "tex" "attr" "attr.index" "attr.size"
 		# 如有多个布局子域同名，将在针对修改 uniform 该子域时同时修改

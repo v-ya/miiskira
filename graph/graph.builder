@@ -9,6 +9,7 @@
 	"miiskira.posky" @null
 	"import.mlog" @null
 	"import.hashmap" @null
+	"import.exbuffer" @null
 	"import.pocket" @null
 	"import.vattr" @null
 	"import.graph" @null

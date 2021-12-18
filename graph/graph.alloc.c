@@ -214,6 +214,7 @@ static struct miiskira_graph_device_s* inner_miiskira_graph_device_alloc(graph_s
 static void inner_miiskira_graph_parser_free_func(struct miiskira_graph_parser_s *restrict r)
 {
 	if (r->rpath) refer_free(r->rpath);
+	hashmap_uini(&r->layout_type);
 	hashmap_uini(&r->model);
 	hashmap_uini(&r->render);
 }
@@ -226,9 +227,13 @@ static struct miiskira_graph_parser_s* inner_miiskira_graph_parser_alloc(void)
 		refer_set_free(r, (refer_free_f) inner_miiskira_graph_parser_free_func);
 		if (!hashmap_init(&r->render)) goto label_fail;
 		if (!hashmap_init(&r->model)) goto label_fail;
-		if (!(r->rpath = fsys_rpath_alloc("", 64)))
+		if (!hashmap_init(&r->layout_type)) goto label_fail;
+		if (!(r->rpath = fsys_rpath_alloc(NULL, 256)))
 			goto label_fail;
+		fsys_rpath_set_delimiter(r->rpath, '.');
 		if (!inner_miiskira_graph_initial_render_parser(&r->render))
+			goto label_fail;
+		if (!inner_miiskira_graph_initial_layout_type(&r->layout_type))
 			goto label_fail;
 		return r;
 		label_fail:
