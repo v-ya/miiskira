@@ -3,6 +3,7 @@ ld		?= ld
 dylink		?= dylink
 ccflags		?= -O2 -Wall -Wextra -Wno-unused-parameter -fno-stack-protector
 pocket-builder	?= pocket-builder
+clear-me	?= clear-kiya
 
 %.o: %.c
 	${cc} ${ccflags} -c '$<' -o '$@'
@@ -15,10 +16,14 @@ pocket-builder	?= pocket-builder
 
 %.kiya:
 	${pocket-builder} '$<' -o '$@'
+%.kiiyaa:
+	${pocket-builder} '$<' -o '$@'
 
 %.r.o:
 	${ld} -r $^ -o '$@'
 
-.PHONY: target clear
-clear:
+.PHONY: target clear clear-kiya
+clear: ${clear-me}
+
+clear-kiya:
 	rm -f *.o *.dy *.kiya *.clear
