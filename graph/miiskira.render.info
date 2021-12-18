@@ -1,0 +1,23 @@
+:tag = "miiskira.render"
+
+# 添加数据布局 vertex uniform
+["layout" layout]
+	# 新添加的布局名称 (name: 布局引用唯一标识符)
+	[layout "name"]
+		# 下方该实例布局为
+		# struct {
+		#     float pos[3];
+		#     float tex[2];
+		#     struct {
+		#         uint32_t index[1];
+		#         float size[2];
+		#     } attr;
+		# }
+		"pos" @f32 => (f32[3]) {}
+		"tex" @f32 => (f32[2]) {}
+		"attr" "index" @u32 => (u32[1]) {}
+		"attr" "size" @f32 => (f32[3]) {}
+		# ...
+		# 可引用子域 "pos" "tex" "attr" "attr.index" "attr.size"
+		# 如有多个布局子域同名，将在针对修改 uniform 该子域时同时修改
+	# ...

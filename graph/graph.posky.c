@@ -9,7 +9,9 @@ static posky_adorable_s* inner_miiskira_graph_posky_initial_adorable(posky_adora
 		d_type_way(present_create) &&
 		d_type_way(present_destroy) &&
 		d_type_way(present_resize) &&
-		d_type_way(present_do)
+		d_type_way(present_do) &&
+		d_type_way(tag_render) &&
+		d_type_way(tag_model)
 		#undef d_type_way
 	) return adorable;
 	return NULL;

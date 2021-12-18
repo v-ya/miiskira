@@ -10,7 +10,9 @@
 	"import.mlog" @null
 	"import.hashmap" @null
 	"import.pocket" @null
+	"import.vattr" @null
 	"import.graph" @null
+	"import.fsys" @null
 [kiya "dylink"]
 	"graph" @"dylink" => &"graph.dy"
 [kiya "parse"]
