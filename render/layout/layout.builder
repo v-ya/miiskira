@@ -8,6 +8,9 @@
 [layout "vertex-p3c3"]
 	"position" @"vec3" => (f32[3]) {}
 	"color" @"vec3" => (f32[3]) {}
+# input output
+[layout "inner-c4"]
+	"color" @"vec4" => (f32[4]) {}
 # uniform
 [layout "viewport"]
-	"viewport" @"mat4" => (f32[16]) { 1, 0, 0, 0,   0, 1, 0, 0,   0, 0, 1, 0,   0, 0, 0, 1 }
+	"viewport" @"mat4" => (f32[16]) {}
