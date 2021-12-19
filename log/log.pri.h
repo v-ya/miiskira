@@ -13,12 +13,14 @@ struct miiskira_log_s {
 };
 
 struct miiskira_log_bypass_s {
-	const char *name;
 	struct miiskira_log_s *inst;
+	const char *name;
+	uintptr_t level;
 };
 
 struct miiskira_log_attr_t {
 	const char *name;
+	uintptr_t level;
 	uintptr_t msg_pos;
 	uint64_t stamp_by_start;
 };
@@ -26,8 +28,8 @@ struct miiskira_log_attr_t {
 extern struct miiskira_log_s *inst;
 
 struct miiskira_log_s* inner_miiskira_log_alloc(void);
-struct mlog_s* inner_miiskira_log_create_bypass(struct miiskira_log_s *restrict r, const char *restrict name);
+struct mlog_s* inner_miiskira_log_create_bypass(struct miiskira_log_s *restrict r, const char *restrict name, uintptr_t level);
 void inner_miiskira_log_clear(struct miiskira_log_s *restrict r);
-void inner_miiskira_log_dump(struct miiskira_log_s *restrict r, mlog_s *restrict ml);
+void inner_miiskira_log_dump(struct miiskira_log_s *restrict r, mlog_s *restrict ml, uintptr_t level_limit);
 
 #endif

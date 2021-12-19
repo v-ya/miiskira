@@ -31,6 +31,7 @@ static struct miiskira_log_s* inner_miiskira_log_append(struct miiskira_log_bypa
 	struct miiskira_log_attr_t attr;
 	inst = r->inst;
 	attr.name = r->name;
+	attr.level = r->level;
 	attr.msg_pos = inst->msg.used;
 	attr.stamp_by_start = yaw_timestamp_msec() - inst->stamp_start;
 	if (length && msg[length - 1] == '\n')
@@ -55,7 +56,7 @@ static int inner_miiskira_log_bypass_report_func(char *restrict msg, uintptr_t l
 	return 1;
 }
 
-struct mlog_s* inner_miiskira_log_create_bypass(struct miiskira_log_s *restrict r, const char *restrict name)
+struct mlog_s* inner_miiskira_log_create_bypass(struct miiskira_log_s *restrict r, const char *restrict name, uintptr_t level)
 {
 	struct miiskira_log_bypass_s *restrict bp;
 	mlog_s *restrict ml;
@@ -63,8 +64,9 @@ struct mlog_s* inner_miiskira_log_create_bypass(struct miiskira_log_s *restrict 
 	if ((bp = (struct miiskira_log_bypass_s *) refer_alloz(sizeof(struct miiskira_log_bypass_s))))
 	{
 		refer_set_free(bp, (refer_free_f) inner_miiskira_log_bypass_free_func);
-		bp->name = name;
 		bp->inst = (struct miiskira_log_s *) refer_save(r);
+		bp->name = name;
+		bp->level = level;
 		if ((ml = mlog_alloc(0)))
 		{
 			mlog_set_locker(ml, r->metux);
@@ -85,7 +87,7 @@ void inner_miiskira_log_clear(struct miiskira_log_s *restrict r)
 
 #include <inttypes.h>
 
-void inner_miiskira_log_dump(struct miiskira_log_s *restrict r, mlog_s *restrict ml)
+void inner_miiskira_log_dump(struct miiskira_log_s *restrict r, mlog_s *restrict ml, uintptr_t level_limit)
 {
 	if (ml && ml->locker != r->metux)
 	{
@@ -97,7 +99,8 @@ void inner_miiskira_log_dump(struct miiskira_log_s *restrict r, mlog_s *restrict
 		attr = (const struct miiskira_log_attr_t *) r->attr.data;
 		n = r->attr.used / sizeof(struct miiskira_log_attr_t);
 		for (i = 0; i < n; ++i)
-			mlog_printf(ml, "[%8.3f] %s %s\n", attr[i].stamp_by_start / 1000.0, attr[i].name, msg + attr[i].msg_pos);
+			if (attr[i].level <= level_limit)
+				mlog_printf(ml, "[%8.3f] %s %s\n", attr[i].stamp_by_start / 1000.0, attr[i].name, msg + attr[i].msg_pos);
 		yaw_lock_unlock(r->metux);
 	}
 }

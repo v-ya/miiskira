@@ -33,7 +33,15 @@ extern mlog_s *miiskira$log$warning;
 extern mlog_s *miiskira$log$info;
 extern mlog_s *miiskira$log$verbose;
 
+// 清除所有级别的日志
 void miiskira_log_clear(void);
-void miiskira_log_dump(mlog_s *mlog);
+
+// 打印日志
+// level_limit:
+//     0 : error
+//     1 : error warning
+//     2 : error warning info
+//     3+: error warning info verbose
+void miiskira_log_dump(mlog_s *mlog, uintptr_t level_limit);
 
 #endif

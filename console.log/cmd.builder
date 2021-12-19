@@ -6,6 +6,7 @@
 [$ "kiya" kiya] "name" @string => "miiskira.console.log"
 
 [kiya "like"]
+	"import.stdc" @null
 	"miiskira.log" @null
 	"console.main" @null
 
