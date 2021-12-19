@@ -37,6 +37,7 @@ struct miiskira_graph_parser_s {
 	hashmap_t render;
 	hashmap_t model;
 	hashmap_t layout_type;
+	hashmap_t shader_type;
 	fsys_rpath_s *rpath;
 };
 
@@ -51,7 +52,24 @@ struct miiskira_graph_range_s {
 struct miiskira_graph_layout_s {
 	uintptr_t size;
 	vattr_s *area;   // name => miiskira_graph_range_s
-	exbuffer_t default_data;
+};
+
+// uniform
+struct miiskira_graph_uniform_s {
+	struct miiskira_graph_layout_s *layout;
+	uint32_t binding;
+	uint32_t share_model;
+	uint32_t share_pipe;
+	uint32_t share_present;
+};
+
+// 着色器
+struct miiskira_graph_shader_s {
+	graph_shader_type_t type;
+	graph_shader_s *shader;
+	struct miiskira_graph_layout_s *input;
+	struct miiskira_graph_layout_s *output;
+	vattr_s *uniform;  // layout-name => miiskira_graph_uniform_s
 };
 
 // 呈现
@@ -68,6 +86,7 @@ struct miiskira_graph_s {
 	struct miiskira_graph_device_s *device;
 	struct miiskira_graph_parser_s *parser;
 	hashmap_t layout;   // name => miiskira_graph_layout_s
+	hashmap_t shader;   // name => miiskira_graph_shader_s
 	hashmap_t present;  // name => miiskira_graph_present_s
 };
 
@@ -109,5 +128,10 @@ struct miiskira_graph_s* inner_miiskira_graph_parse_pocket(struct miiskira_graph
 hashmap_t* inner_miiskira_graph_initial_layout_type(hashmap_t *restrict layout_type);
 struct miiskira_graph_layout_s* inner_miiskira_graph_layout_alloc(void);
 struct miiskira_graph_layout_s* inner_miiskira_graph_layout_append(struct miiskira_graph_layout_s *restrict layout, const hashmap_t *restrict layout_type, const char *restrict name, const char *restrict type, const void *data, uintptr_t size);
+
+// inner.shader.c
+
+hashmap_t* inner_miiskira_graph_initial_shader_type(hashmap_t *restrict shader_type);
+struct miiskira_graph_shader_s* inner_miiskira_graph_shader_alloc(graph_dev_s *restrict dev, const hashmap_t *restrict shader_type, const char *restrict type, const void *spv_data, uintptr_t spv_size);
 
 #endif

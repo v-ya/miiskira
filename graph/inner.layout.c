@@ -98,7 +98,6 @@ hashmap_t* inner_miiskira_graph_initial_layout_type(hashmap_t *restrict layout_t
 static void inner_miiskira_graph_layout_free_func(struct miiskira_graph_layout_s *restrict r)
 {
 	if (r->area) refer_free(r->area);
-	exbuffer_uini(&r->default_data);
 }
 
 struct miiskira_graph_layout_s* inner_miiskira_graph_layout_alloc(void)
@@ -107,8 +106,7 @@ struct miiskira_graph_layout_s* inner_miiskira_graph_layout_alloc(void)
 	if ((r = (struct miiskira_graph_layout_s *) refer_alloz(sizeof(struct miiskira_graph_layout_s))))
 	{
 		refer_set_free(r, (refer_free_f) inner_miiskira_graph_layout_free_func);
-		if (exbuffer_init(&r->default_data, 64) &&
-			(r->area = vattr_alloc()))
+		if ((r->area = vattr_alloc()))
 			return r;
 		refer_free(r);
 	}
@@ -127,11 +125,10 @@ struct miiskira_graph_layout_s* inner_miiskira_graph_layout_append(struct miiski
 {
 	hashmap_vlist_t *restrict vl;
 	uintptr_t offset, type_size;
-	offset = layout->default_data.used;
+	offset = layout->size;
 	if (type && (vl = hashmap_find_name(layout_type, type)) &&
 		(type_size = inner_miiskira_graph_layout_check_type_size(size,
-			(enum miiskira_graph_layout_type_t) (uintptr_t) vl->value)) &&
-		exbuffer_append(&layout->default_data, data, size))
+			(enum miiskira_graph_layout_type_t) (uintptr_t) vl->value)))
 	{
 		layout->size += size;
 		if (name)

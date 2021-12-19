@@ -68,14 +68,69 @@ static struct miiskira_graph_s* inner_miiskira_graph_parse_render_layout(struct 
 		log_verbose("[graph] load render.layout (%s) end", a->name.string);
 		if (!hashmap_set_name(&r->layout, a->name.string, layout, inner_miiskira_graph_hashmap_free_func))
 			goto label_fail;
-		log_info("[graph] load render.layout (%s)", a->name.string);
 		layout = NULL;
+		log_info("[graph] load render.layout (%s)", a->name.string);
 		++a;
 	}
 	return r;
 	label_fail:
-	if (!layout) refer_free(layout);
+	if (layout) refer_free(layout);
 	log_error("[graph] load render.layout (%s) fail", a->name.string?a->name.string:"");
+	return NULL;
+}
+
+// shader
+
+static struct miiskira_graph_shader_s* inner_miiskira_graph_parse_render_shader_create(struct miiskira_graph_s *restrict r, pocket_s *restrict p, const pocket_attr_t *restrict a)
+{
+	const pocket_attr_t *restrict v;
+	struct miiskira_graph_shader_s *restrict shader;
+	shader = NULL;
+	if (!pocket_is_tag(p, a, pocket_tag$index, NULL))
+		goto label_fail;
+	if (!(v = pocket_find(p, a, "shader")))
+		goto label_fail;
+	// shader
+	shader = inner_miiskira_graph_shader_alloc(r->device->dev, &r->parser->shader_type, v->tag.string, v->data.ptr, v->size);
+	if (!shader)
+		goto label_fail;
+	// input
+	// output
+	// uniform
+	return shader;
+	label_fail:
+	if (shader) refer_free(shader);
+	return NULL;
+}
+
+static struct miiskira_graph_s* inner_miiskira_graph_parse_render_shader(struct miiskira_graph_s *restrict r, pocket_s *restrict p, const pocket_attr_t *restrict a)
+{
+	struct miiskira_graph_shader_s *restrict shader;
+	uintptr_t n;
+	shader = NULL;
+	if (!pocket_is_tag(p, a, pocket_tag$index, NULL))
+		goto label_fail;
+	n = a->size;
+	a = (const pocket_attr_t *) a->data.ptr;
+	while (n)
+	{
+		--n;
+		if (!a->name.string)
+			goto label_fail;
+		if (hashmap_find_name(&r->shader, a->name.string))
+			goto label_fail;
+		if (!(shader = inner_miiskira_graph_parse_render_shader_create(r, p, a)))
+			goto label_fail;
+		if (!hashmap_set_name(&r->shader, a->name.string, shader, inner_miiskira_graph_hashmap_free_func))
+			goto label_fail;
+		shader = NULL;
+		log_info("[graph] load render.shader (%s)", a->name.string);
+		++a;
+	}
+	return r;
+	label_fail:
+	if (shader) refer_free(shader);
+	log_error("[graph] load render.shader (%s) fail", a->name.string?a->name.string:"");
 	return NULL;
 }
 
@@ -83,7 +138,8 @@ static struct miiskira_graph_s* inner_miiskira_graph_parse_render_layout(struct 
 
 hashmap_t* inner_miiskira_graph_initial_render_parser(hashmap_t *restrict parser)
 {
-	if (hashmap_set_name(parser, "layout", inner_miiskira_graph_parse_render_layout, NULL))
+	if (hashmap_set_name(parser, "layout", inner_miiskira_graph_parse_render_layout, NULL) &&
+		hashmap_set_name(parser, "shader", inner_miiskira_graph_parse_render_shader, NULL))
 		return parser;
 	return NULL;
 }

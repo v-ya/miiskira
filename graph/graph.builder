@@ -8,6 +8,7 @@
 [kiya "like"]
 	"miiskira.log" @null
 	"miiskira.posky" @null
+	"import.stdc" @null
 	"import.mlog" @null
 	"import.hashmap" @null
 	"import.exbuffer" @null

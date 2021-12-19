@@ -28,3 +28,31 @@
 		# 可引用子域 "pos" "tex" "attr" "attr.index" "attr.size"
 		# 如有多个布局子域同名，将在针对修改 uniform 该子域时同时修改
 	# ...
+
+# 添加着色器
+["shader" shader]
+	[shader "name" shader-define]
+		# shader: 着色器 SPIR-V 编译码
+		"shader" @"vertex"    => &"shader.vert.spv" # (必选, 且唯一) 顶点着色器
+		"shader" @"tess-ctrl" => &"shader.tesc.spv" # (必选, 且唯一) 曲面细分控制着色器
+		"shader" @"tess-eval" => &"shader.tese.spv" # (必选, 且唯一) 曲面细分计算着色器
+		"shader" @"geometry"  => &"shader.geom.spv" # (必选, 且唯一) 几何着色器
+		"shader" @"fragment"  => &"shader.frag.spv" # (必选, 且唯一) 片段着色器
+		"shader" @"compute"   => &"shader.comp.spv" # (必选, 且唯一) 计算着色器
+		# input: 着色器输入
+		# output: 着色器输出
+		# 上一管线的着色器输出必须和下一管线的着色器输入一致，特别的，顶点着色器的输入必须和模型的顶点数据布局一致
+		"input" @string => "layout-name"  # (可选) 映射使用 [layout] 所定义的数据布局
+		"output" @string => "layout-name" # (可选) 映射使用 [layout] 所定义的数据布局
+		# uniform: 统一变量
+		[shader-define "uniform" uniform-define] # (可选)
+			# [uniform-define] 节点下的名称必须是正整数字符串
+			# 且该数字必须升序排列且不重复
+			# 该数字指示该 uniform 在该 shader 中所占用的 binding
+			[uniform-define "0"] # (可选)
+				"layout" @string => "layout-name" # (必选) 映射使用 [layout] 所定义的数据布局
+				"share-model" @null               # (可选) 是否在 该呈现 该管线 中使所有的 模型 共用，存在该项为是，默认否
+				"share-pipe" @null                # (可选) 是否在 该呈现 中使所有的 管线 共用，存在该项为是，默认否
+				"share-present" @null             # (可选) 是否使所有的 呈现 共用，存在该项为是，默认否
+			# 使用采样器及其他状况的情形待定
+			# ...
