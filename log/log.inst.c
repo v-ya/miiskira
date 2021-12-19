@@ -25,7 +25,7 @@ struct miiskira_log_s* inner_miiskira_log_alloc(void)
 	return NULL;
 }
 
-static struct miiskira_log_s* inner_miiskira_log_append(struct miiskira_log_bypass_s *restrict r, const char *restrict msg, uintptr_t length)
+static struct miiskira_log_s* inner_miiskira_log_append(struct miiskira_log_bypass_s *restrict r, char *restrict msg, uintptr_t length)
 {
 	struct miiskira_log_s *restrict inst;
 	struct miiskira_log_attr_t attr;
@@ -33,6 +33,8 @@ static struct miiskira_log_s* inner_miiskira_log_append(struct miiskira_log_bypa
 	attr.name = r->name;
 	attr.msg_pos = inst->msg.used;
 	attr.stamp_by_start = yaw_timestamp_msec() - inst->stamp_start;
+	if (length && msg[length - 1] == '\n')
+		msg[--length] = 0;
 	if (exbuffer_append(&inst->msg, msg, length + 1))
 	{
 		if (exbuffer_append(&inst->attr, &attr, sizeof(attr)))
@@ -47,7 +49,7 @@ static void inner_miiskira_log_bypass_free_func(struct miiskira_log_bypass_s *re
 	if (r->inst) refer_free(r->inst);
 }
 
-static int inner_miiskira_log_bypass_report_func(const char *restrict msg, uintptr_t length, struct miiskira_log_bypass_s *restrict bp)
+static int inner_miiskira_log_bypass_report_func(char *restrict msg, uintptr_t length, struct miiskira_log_bypass_s *restrict bp)
 {
 	inner_miiskira_log_append(bp, msg, length);
 	return 1;
