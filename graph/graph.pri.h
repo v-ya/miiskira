@@ -133,5 +133,8 @@ struct miiskira_graph_layout_s* inner_miiskira_graph_layout_append(struct miiski
 
 hashmap_t* inner_miiskira_graph_initial_shader_type(hashmap_t *restrict shader_type);
 struct miiskira_graph_shader_s* inner_miiskira_graph_shader_alloc(graph_dev_s *restrict dev, const hashmap_t *restrict shader_type, const char *restrict type, const void *spv_data, uintptr_t spv_size);
+void inner_miiskira_graph_shader_set_input(struct miiskira_graph_shader_s *restrict shader, struct miiskira_graph_layout_s *restrict layout);
+void inner_miiskira_graph_shader_set_output(struct miiskira_graph_shader_s *restrict shader, struct miiskira_graph_layout_s *restrict layout);
+struct miiskira_graph_uniform_s* inner_miiskira_graph_shader_add_uniform_layout(struct miiskira_graph_shader_s *restrict shader, uint32_t binding, struct miiskira_graph_layout_s *restrict layout, uint32_t share_model, uint32_t share_pipe, uint32_t share_present);
 
 #endif

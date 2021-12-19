@@ -23,6 +23,19 @@ static void inner_miiskira_graph_shader_free_func(struct miiskira_graph_shader_s
 	if (r->shader) refer_free(r->shader);
 }
 
+static void inner_miiskira_graph_uniform_free_func(struct miiskira_graph_uniform_s *restrict r)
+{
+	if (r->layout) refer_free(r->layout);
+}
+
+static struct miiskira_graph_uniform_s* inner_miiskira_graph_uniform_alloc_empty(void)
+{
+	struct miiskira_graph_uniform_s *restrict r;
+	if ((r = (struct miiskira_graph_uniform_s *) refer_alloz(sizeof(struct miiskira_graph_uniform_s))))
+		refer_set_free(r, (refer_free_f) inner_miiskira_graph_uniform_free_func);
+	return r;
+}
+
 static struct miiskira_graph_shader_s* inner_miiskira_graph_shader_alloc_empty(void)
 {
 	struct miiskira_graph_shader_s *restrict r;
@@ -48,6 +61,43 @@ struct miiskira_graph_shader_s* inner_miiskira_graph_shader_alloc(graph_dev_s *r
 		if (r->shader)
 			return r;
 		refer_free(r);
+	}
+	return NULL;
+}
+
+void inner_miiskira_graph_shader_set_input(struct miiskira_graph_shader_s *restrict shader, struct miiskira_graph_layout_s *restrict layout)
+{
+	if (shader->input) refer_free(shader->input);
+	shader->input = (struct miiskira_graph_layout_s *) refer_save(layout);
+}
+
+void inner_miiskira_graph_shader_set_output(struct miiskira_graph_shader_s *restrict shader, struct miiskira_graph_layout_s *restrict layout)
+{
+	if (shader->output) refer_free(shader->output);
+	shader->output = (struct miiskira_graph_layout_s *) refer_save(layout);
+}
+
+static inline struct miiskira_graph_shader_s* inner_miiskira_graph_shader_add_uniform_check(struct miiskira_graph_shader_s *restrict shader, uint32_t binding)
+{
+	register vattr_vlist_t *restrict vl;
+	if ((vl = vattr_tail(shader->uniform)) == vattr_last_end(shader->uniform) ||
+		((struct miiskira_graph_uniform_s *) vl->value)->binding < binding)
+		return shader;
+	return NULL;
+}
+
+struct miiskira_graph_uniform_s* inner_miiskira_graph_shader_add_uniform_layout(struct miiskira_graph_shader_s *restrict shader, uint32_t binding, struct miiskira_graph_layout_s *restrict layout, uint32_t share_model, uint32_t share_pipe, uint32_t share_present)
+{
+	struct miiskira_graph_uniform_s *restrict uniform;
+	vattr_vlist_t *restrict vl;
+	if (inner_miiskira_graph_shader_add_uniform_check(shader, binding) && layout)
+	{
+		if ((uniform = inner_miiskira_graph_uniform_alloc_empty()))
+		{
+			vl = vattr_insert_tail(shader->uniform, "layout", uniform);
+			refer_free(uniform);
+			if (vl) return uniform;
+		}
 	}
 	return NULL;
 }
