@@ -17,3 +17,10 @@
 		"shader" @"fragment" => &"fragment.frag.spv"
 		"input" @string => "inner-c4"
 		"output" @string => "inner-c4"
+
+["g-pipe" g-pipe]
+	[g-pipe "background" bg]
+		[bg "shader"]
+			"vert.background" @string => "main"
+			"frag.background" @string => "main"
+		[bg] "topology" @string => "tl"
