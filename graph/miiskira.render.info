@@ -29,6 +29,60 @@
 		# 如有多个布局子域同名，将在针对修改 uniform 该子域时同时修改
 	# ...
 
+# 添加色彩混合预设
+["blend" blend]
+	[blend "name" blend-define]
+		"logic" @string => "" # (可选) 逻辑操作，可选取值见下方，如果设置该项，attachment 将被忽略
+		# logic:
+		#     "0"  = 0
+		#     "&"  = s & d
+		#     "&~" = s & ~d
+		#     "s"  = s
+		#     "~&" = ~s & d
+		#     "d"  = d
+		#     "^"  = s ^ d
+		#     "|"  = s | d
+		#     "!|" = ~(s | d)
+		#     "!^" = ~(s ^ d)
+		#     "~d" = ~d
+		#     "|~" = s | ~d
+		#     "~s" = ~s
+		#     "~|" = ~s | d
+		#     "!&" = ~(s & d)
+		#     "1"  = 1
+		"color" @f32 => (f32[4]) { 0, 0, 0, 0 } # (可选) 常量色彩分量(constant) { r, g, b, a }
+		[blend-define "attachment" blend-define-attachment]  # (可选)
+			[blend-define-attachment "-"]                # (可选) 名字不重要，啥都行
+				"mask" @u8 => (u8[4]) { 1, 1, 1, 1 } # (可选) 色彩分量掩码 { r, g, b, a }
+				"src-color" @string => ""            # (必选) value => factor
+				"dst-color" @string => ""            # (必选) value => factor
+				"op-color" @string => ""             # (必选) value => op
+				"src-alpha" @string => ""            # (必选) value => factor
+				"dst-alpha" @string => ""            # (必选) value => factor
+				"op-alpha" @string => ""             # (必选) value => op
+				# factor:
+				#     "0"    = (zero)
+				#     "1"    = (one)
+				#     "sc"   = (src color)
+				#     "1-sc" = 1 - (src color)
+				#     "dc"   = (dst color)
+				#     "1-dc" = 1 - (dst color)
+				#     "sa"   = (src alpha)
+				#     "1-sa" = 1 - (src alpha)
+				#     "da"   = (dst alpha)
+				#     "1-da" = 1 - (dst alpha)
+				#     "cc"   = (constant color)
+				#     "1-cc" = 1 - (constant color)
+				#     "ca"   = (constant alpha)
+				#     "1-ca" = 1 - (constant alpha)
+				# op:
+				#     "+"    = (src) * (src-factor) + (dst) * (dst-factor)
+				#     "-"    = (src) * (src-factor) - (dst) * (dst-factor)
+				#     "-+"   = - (src) * (src-factor) + (dst) * (dst-factor)
+				#     "min"  = min((src), (dst))
+				#     "max"  = max((src), (dst))
+			# ...
+
 # 添加着色器
 ["shader" shader]
 	[shader "name" shader-define]
@@ -78,3 +132,6 @@
 		# lsa: line strip with adjacency
 		# tla: triangle list with adjacency
 		# tsa: triangle strip with adjacency
+	[g-pipe-define]
+		# 设置色彩混合
+		"blend" @string => "blend-name"

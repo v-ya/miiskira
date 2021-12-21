@@ -81,6 +81,222 @@ static struct miiskira_graph_s* inner_miiskira_graph_parse_render_layout(struct 
 	return NULL;
 }
 
+// blend
+
+static graph_logic_op_t inner_miiskira_graph_parse_render_blend_get_logic_op(const char *restrict s)
+{
+	uint32_t c, n;
+	c = n = 0;
+	if (!s) goto label_fail;
+	while (*s) c = (c << 8) | *(const uint8_t *) s++, ++n;
+	if (n < 3)
+	{
+		switch (c)
+		{
+			case ('0'):            return graph_logic_op_clear;
+			case ('&'):            return graph_logic_op_and;
+			case ('&' << 8 | '~'): return graph_logic_op_and_reverse;
+			case ('s'):            return graph_logic_op_copy;
+			case ('~' << 8 | '&'): return graph_logic_op_and_inverted;
+			case ('d'):            return graph_logic_op_no_op;
+			case ('^'):            return graph_logic_op_xor;
+			case ('|'):            return graph_logic_op_or;
+			case ('!' << 8 | '|'): return graph_logic_op_nor;
+			case ('!' << 8 | '^'): return graph_logic_op_equivalent;
+			case ('~' << 8 | 'd'): return graph_logic_op_invert;
+			case ('|' << 8 | '~'): return graph_logic_op_or_reverse;
+			case ('~' << 8 | 's'): return graph_logic_op_copy_inverted;
+			case ('~' << 8 | '|'): return graph_logic_op_or_inverted;
+			case ('!' << 8 | '&'): return graph_logic_op_nand;
+			case ('1'):            return graph_logic_op_set;
+		}
+	}
+	label_fail:
+	return graph_logic_op$number;
+}
+
+static graph_blend_factor_t inner_miiskira_graph_parse_render_blend_get_factor(const char *restrict s)
+{
+	uint32_t c, n;
+	c = n = 0;
+	if (!s) goto label_fail;
+	while (*s) c = (c << 8) | *(const uint8_t *) s++, ++n;
+	if (n < 5)
+	{
+		switch (c)
+		{
+			case ('0'):                                    return graph_blend_factor_zero;
+			case ('1'):                                    return graph_blend_factor_one;
+			case ('s' << 8 | 'c'):                         return graph_blend_factor_src_color;
+			case ('1' << 24 | '-' << 16 | 's' << 8 | 'c'): return graph_blend_factor_one_minus_src_color;
+			case ('d' << 8 | 'c'):                         return graph_blend_factor_dst_color;
+			case ('1' << 24 | '-' << 16 | 'd' << 8 | 'c'): return graph_blend_factor_one_minus_dst_color;
+			case ('s' << 8 | 'a'):                         return graph_blend_factor_src_alpha;
+			case ('1' << 24 | '-' << 16 | 's' << 8 | 'a'): return graph_blend_factor_one_minus_src_alpha;
+			case ('d' << 8 | 'a'):                         return graph_blend_factor_dst_alpha;
+			case ('1' << 24 | '-' << 16 | 'd' << 8 | 'a'): return graph_blend_factor_one_minus_dst_alpha;
+			case ('c' << 8 | 'c'):                         return graph_blend_factor_constant_color;
+			case ('1' << 24 | '-' << 16 | 'c' << 8 | 'c'): return graph_blend_factor_one_minus_constant_color;
+			case ('c' << 8 | 'a'):                         return graph_blend_factor_constant_alpha;
+			case ('1' << 24 | '-' << 16 | 'c' << 8 | 'a'): return graph_blend_factor_one_minus_constant_alpha;
+		}
+	}
+	label_fail:
+	return graph_blend_factor$number;
+}
+
+static graph_blend_op_t inner_miiskira_graph_parse_render_blend_get_op(const char *restrict s)
+{
+	uint32_t c, n;
+	c = n = 0;
+	if (!s) goto label_fail;
+	while (*s) c = (c << 8) | *(const uint8_t *) s++, ++n;
+	if (n < 4)
+	{
+		switch (c)
+		{
+			case ('+'):                        return graph_blend_op_add;
+			case ('-'):                        return graph_blend_op_subtract;
+			case ('-' << 8 | '+'):             return graph_blend_op_reverse_subtract;
+			case ('m' << 16 | 'i' << 8 | 'n'): return graph_blend_op_min;
+			case ('m' << 16 | 'a' << 8 | 'x'): return graph_blend_op_max;
+		}
+	}
+	label_fail:
+	return graph_blend_op$number;
+}
+
+static graph_pipe_color_blend_s* inner_miiskira_graph_parse_render_blend_create(struct miiskira_graph_s *restrict r, pocket_s *restrict p, const pocket_attr_t *restrict a)
+{
+	const pocket_attr_t *restrict attach, *restrict v;
+	struct graph_pipe_color_blend_s *restrict blend;
+	uint64_t n;
+	blend = NULL;
+	if (!pocket_is_tag(p, a, pocket_tag$index, NULL))
+		goto label_fail;
+	// attachment
+	attach = pocket_find(p, a, "attachment");
+	blend = graph_pipe_color_blend_alloc(attach?((uint32_t) attach->size):0);
+	if (!blend)
+		goto label_fail;
+	if (attach)
+	{
+		graph_blend_factor_t s_color, d_color, s_alpha, d_alpha;
+		graph_blend_op_t op_color, op_alpha;
+		graph_color_component_mask_t mask;
+		if (!pocket_is_tag(p, attach, pocket_tag$index, NULL))
+			goto label_fail;
+		n = attach->size;
+		attach = (const pocket_attr_t *) attach->data.ptr;
+		while (n)
+		{
+			--n;
+			mask = graph_color_component_mask_all;
+			// mask
+			if ((v = pocket_find(p, attach, "mask")))
+			{
+				if (!pocket_is_tag(p, v, pocket_tag$u8, NULL))
+					goto label_fail;
+				if (v->size != (sizeof(uint8_t) * 4))
+					goto label_fail;
+				mask = 0;
+				if (((uint8_t *) v->data.ptr)[0]) mask |= graph_color_component_mask_r;
+				if (((uint8_t *) v->data.ptr)[1]) mask |= graph_color_component_mask_g;
+				if (((uint8_t *) v->data.ptr)[2]) mask |= graph_color_component_mask_b;
+				if (((uint8_t *) v->data.ptr)[3]) mask |= graph_color_component_mask_a;
+			}
+			// src-color
+			if (!(v = pocket_find_tag(p, attach, "src-color", pocket_tag$string, NULL)))
+				goto label_fail;
+			if ((s_color = inner_miiskira_graph_parse_render_blend_get_factor((const char *) v->data.ptr)) >= graph_blend_factor$number)
+				goto label_fail;
+			// dst-color
+			if (!(v = pocket_find_tag(p, attach, "dst-color", pocket_tag$string, NULL)))
+				goto label_fail;
+			if ((d_color = inner_miiskira_graph_parse_render_blend_get_factor((const char *) v->data.ptr)) >= graph_blend_factor$number)
+				goto label_fail;
+			// op-color
+			if (!(v = pocket_find_tag(p, attach, "op-color", pocket_tag$string, NULL)))
+				goto label_fail;
+			if ((op_color = inner_miiskira_graph_parse_render_blend_get_op((const char *) v->data.ptr)) >= graph_blend_op$number)
+				goto label_fail;
+			// src-alpha
+			if (!(v = pocket_find_tag(p, attach, "src-alpha", pocket_tag$string, NULL)))
+				goto label_fail;
+			if ((s_alpha = inner_miiskira_graph_parse_render_blend_get_factor((const char *) v->data.ptr)) >= graph_blend_factor$number)
+				goto label_fail;
+			// dst-alpha
+			if (!(v = pocket_find_tag(p, attach, "dst-alpha", pocket_tag$string, NULL)))
+				goto label_fail;
+			if ((d_alpha = inner_miiskira_graph_parse_render_blend_get_factor((const char *) v->data.ptr)) >= graph_blend_factor$number)
+				goto label_fail;
+			// op-alpha
+			if (!(v = pocket_find_tag(p, attach, "op-alpha", pocket_tag$string, NULL)))
+				goto label_fail;
+			if ((op_alpha = inner_miiskira_graph_parse_render_blend_get_op((const char *) v->data.ptr)) >= graph_blend_op$number)
+				goto label_fail;
+			// append
+			if (!graph_pipe_color_blend_append_attachment(blend, 1, mask, s_color, d_color, op_color, s_alpha, d_alpha, op_alpha))
+				goto label_fail;
+			++attach;
+		}
+	}
+	// logic
+	if ((v = pocket_find(p, a, "logic")))
+	{
+		graph_logic_op_t logic_op;
+		if (!pocket_is_tag(p, v, pocket_tag$string, NULL))
+			goto label_fail;
+		if ((logic_op = inner_miiskira_graph_parse_render_blend_get_logic_op((const char *) v->data.ptr)) >= graph_logic_op$number)
+			goto label_fail;
+		graph_pipe_color_blend_set_logic(blend, 1, logic_op);
+	}
+	// color
+	if ((v = pocket_find(p, a, "color")))
+	{
+		if (!pocket_is_tag(p, v, pocket_tag$f32, NULL))
+			goto label_fail;
+		if (v->size != (sizeof(float) * 4))
+			goto label_fail;
+		graph_pipe_color_blend_set_constants(blend, (float *) v->data.ptr);
+	}
+	return blend;
+	label_fail:
+	if (blend) refer_free(blend);
+	return NULL;
+}
+
+static struct miiskira_graph_s* inner_miiskira_graph_parse_render_blend(struct miiskira_graph_s *restrict r, pocket_s *restrict p, const pocket_attr_t *restrict a)
+{
+	graph_pipe_color_blend_s *restrict blend;
+	uint64_t n;
+	blend = NULL;
+	if (!pocket_is_tag(p, a, pocket_tag$index, NULL))
+		goto label_fail;
+	n = a->size;
+	a = (const pocket_attr_t *) a->data.ptr;
+	while (n)
+	{
+		--n;
+		if (!a->name.string)
+			goto label_fail;
+		if (hashmap_find_name(&r->blend, a->name.string))
+			goto label_fail;
+		if (!(blend = inner_miiskira_graph_parse_render_blend_create(r, p, a)))
+			goto label_fail;
+		if (!hashmap_set_name(&r->blend, a->name.string, blend, inner_miiskira_graph_hashmap_free_func))
+			goto label_fail;
+		blend = NULL;
+		log_info("[graph] load render.blend (%s)", a->name.string);
+		++a;
+	}
+	return r;
+	label_fail:
+	if (blend) refer_free(blend);
+	log_error("[graph] load render.blend (%s) fail", a->name.string?a->name.string:"");
+	return NULL;
+}
+
 // shader
 
 static struct miiskira_graph_layout_s* inner_miiskira_graph_parse_render_shader_get_layout(struct miiskira_graph_s *restrict r, pocket_s *restrict p, const pocket_attr_t *restrict a)
@@ -212,16 +428,12 @@ static struct miiskira_graph_s* inner_miiskira_graph_parse_render_shader(struct 
 
 // g-pipe
 
-static graph_primitive_topology_t inner_miiskira_graph_parse_render_gpipe_get_topology(const char *restrict tp)
+static graph_primitive_topology_t inner_miiskira_graph_parse_render_gpipe_get_topology(const char *restrict s)
 {
 	uint32_t c, n;
 	c = n = 0;
-	if (!tp) goto label_fail;
-	while (*tp)
-	{
-		c = (c << 8) | *(const uint8_t *) tp++;
-		++n;
-	}
+	if (!s) goto label_fail;
+	while (*s) c = (c << 8) | *(const uint8_t *) s++, ++n;
 	if (n < 4)
 	{
 		switch (c)
@@ -245,6 +457,7 @@ static graph_primitive_topology_t inner_miiskira_graph_parse_render_gpipe_get_to
 static struct miiskira_graph_gpipe_s* inner_miiskira_graph_parse_render_gpipe_create(struct miiskira_graph_s *restrict r, pocket_s *restrict p, const pocket_attr_t *restrict a)
 {
 	struct miiskira_graph_gpipe_s *restrict gpipe;
+	graph_pipe_color_blend_s *restrict blend;
 	const pocket_attr_t *restrict v;
 	const char **s;
 	uintptr_t i, n;
@@ -270,7 +483,7 @@ static struct miiskira_graph_gpipe_s* inner_miiskira_graph_parse_render_gpipe_cr
 	gpipe = inner_miiskira_graph_gpipe_alloc(r, n, s, s + n);
 	if (!gpipe)
 		goto label_fail;
-	// shader
+	// topology
 	if (!(v = pocket_find_tag(p, a, "topology", pocket_tag$string, NULL)))
 		goto label_fail;
 	if ((uint32_t) (tp = inner_miiskira_graph_parse_render_gpipe_get_topology((const char *) v->data.ptr)) >= graph_primitive_topology$number)
@@ -278,6 +491,16 @@ static struct miiskira_graph_gpipe_s* inner_miiskira_graph_parse_render_gpipe_cr
 	if (!inner_miiskira_graph_gpipe_set_assembly(gpipe, tp))
 		goto label_fail;
 	log_verbose("[graph] render.g-pipe topology(%s)", (const char *) v->data.ptr);
+	// blend
+	if (!(v = pocket_find_tag(p, a, "blend", pocket_tag$string, NULL)))
+		goto label_fail;
+	if (!v->data.ptr)
+		goto label_fail;
+	if (!(blend = (graph_pipe_color_blend_s *) hashmap_get_name(&r->blend, (const char *) v->data.ptr)))
+		goto label_fail;
+	if (!inner_miiskira_graph_gpipe_set_blend(gpipe, blend))
+		goto label_fail;
+	log_verbose("[graph] render.g-pipe blend(%s)", (const char *) v->data.ptr);
 	// okay
 	if (!inner_miiskira_graph_gpipe_okay(gpipe))
 		goto label_fail;
@@ -323,6 +546,7 @@ static struct miiskira_graph_s* inner_miiskira_graph_parse_render_gpipe(struct m
 hashmap_t* inner_miiskira_graph_initial_render_parser(hashmap_t *restrict parser)
 {
 	if (hashmap_set_name(parser, "layout", inner_miiskira_graph_parse_render_layout, NULL) &&
+		hashmap_set_name(parser, "blend", inner_miiskira_graph_parse_render_blend, NULL) &&
 		hashmap_set_name(parser, "shader", inner_miiskira_graph_parse_render_shader, NULL) &&
 		hashmap_set_name(parser, "g-pipe", inner_miiskira_graph_parse_render_gpipe, NULL))
 		return parser;

@@ -207,10 +207,16 @@ struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_set_assembly(struct mi
 	return NULL;
 }
 
+struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_set_blend(struct miiskira_graph_gpipe_s *restrict r, graph_pipe_color_blend_s *restrict blend)
+{
+	if (graph_gpipe_param_set_color_blend(r->param, blend))
+		return r;
+	return NULL;
+}
+
 struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_okay(struct miiskira_graph_gpipe_s *restrict r)
 {
 	if (r->pipe) goto label_okay;
-	// graph_gpipe_param_set_color_blend();
 	// graph_gpipe_param_set_dynamic();
 	// graph_gpipe_param_set_render();
 	// graph_gpipe_param_set_rasterization_depth_clamp();

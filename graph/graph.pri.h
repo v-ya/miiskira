@@ -99,6 +99,7 @@ struct miiskira_graph_s {
 	struct miiskira_graph_device_s *device;
 	struct miiskira_graph_parser_s *parser;
 	hashmap_t layout;   // name => miiskira_graph_layout_s
+	hashmap_t blend;    // name => graph_pipe_color_blend_s
 	hashmap_t shader;   // name => miiskira_graph_shader_s
 	hashmap_t gpipe;    // name => miiskira_graph_gpipe_s
 	hashmap_t present;  // name => miiskira_graph_present_s
@@ -156,6 +157,7 @@ struct miiskira_graph_uniform_s* inner_miiskira_graph_shader_add_uniform_layout(
 
 struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_alloc(struct miiskira_graph_s *restrict p, uintptr_t shader_number, const char *const shader_name[], const char *const shader_entry[]);
 struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_set_assembly(struct miiskira_graph_gpipe_s *restrict r, graph_primitive_topology_t topology);
+struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_set_blend(struct miiskira_graph_gpipe_s *restrict r, graph_pipe_color_blend_s *restrict blend);
 struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_okay(struct miiskira_graph_gpipe_s *restrict r);
 
 #endif
