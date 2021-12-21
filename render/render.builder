@@ -3,5 +3,5 @@
 : author   = "vya"
 
 []
-	"layout" @"kiya" => &"layout/layout.render"
+	"define" @"kiya" => &"define/define.render"
 	"background" @"kiya" => &"background/background.render"

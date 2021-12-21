@@ -23,4 +23,6 @@
 		[bg "shader"]
 			"vert.background" @string => "main"
 			"frag.background" @string => "main"
-		[bg] "topology" @string => "tl"
+	[bg]
+		"topology" @string => "tl"
+		"blend" @string => "default"
