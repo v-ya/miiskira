@@ -56,3 +56,25 @@
 				"share-present" @null             # (可选) 是否使所有的 呈现 共用，存在该项为是，默认否
 			# 使用采样器及其他状况的情形待定
 			# ...
+
+# 构建图形管线
+["g-pipe" g-pipe]
+	[g-pipe "name" g-pipe-define]
+		[g-pipe-define "shader" g-pipe-shader]
+			# 着色器必须按照实际渲染流程的类型顺序排列
+			# 即: vertex [tess-ctrl tess-eval] [geometry] fragment
+			"shader-name" @string => "symbol" # symbol 为该着色器使用的入口符号
+			# ...
+	[g-pipe-define]
+		# 设置模型顶点绘制拓扑结构
+		"topology" @string => ""
+		# pl:  point list
+		# ll:  line list
+		# ls:  line strip
+		# tl:  triangle list
+		# ts:  triangle strip
+		# tf:  triangle fan
+		# lla: line list with adjacency
+		# lsa: line strip with adjacency
+		# tla: triangle list with adjacency
+		# tsa: triangle strip with adjacency

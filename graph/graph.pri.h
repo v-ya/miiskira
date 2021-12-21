@@ -24,6 +24,7 @@ struct miiskira_graph_device_s {
 	graph_queue_t *q_graphics;
 	graph_queue_t *q_compute;
 	graph_queue_t *q_transfer;
+	graph_pipe_cache_s *pipe_cache;
 	// info
 	const graph_devices_s *list_device;
 	const graph_device_queues_s *list_queue;
@@ -51,13 +52,16 @@ struct miiskira_graph_range_s {
 // 数据布局 用于 vertex 和 uniform
 struct miiskira_graph_layout_s {
 	uintptr_t size;
+	uintptr_t attr_number;
 	vattr_s *area;   // name => miiskira_graph_range_s
+	graph_vertex_input_description_s *vertex_desc;
 };
 
 // uniform
 struct miiskira_graph_uniform_s {
-	struct miiskira_graph_layout_s *layout;
 	uint32_t binding;
+	graph_shader_stage_flags_t shader_stage;
+	struct miiskira_graph_layout_s *layout;
 	uint32_t share_model;
 	uint32_t share_pipe;
 	uint32_t share_present;
@@ -69,7 +73,16 @@ struct miiskira_graph_shader_s {
 	graph_shader_s *shader;
 	struct miiskira_graph_layout_s *input;
 	struct miiskira_graph_layout_s *output;
-	vattr_s *uniform;  // layout-name => miiskira_graph_uniform_s
+	vattr_s *uniform;  // layout-type => miiskira_graph_uniform_s
+};
+
+// 图形管线
+struct miiskira_graph_gpipe_s {
+	graph_pipe_s *pipe;
+	struct miiskira_graph_layout_s *vertex;
+	vattr_s *uniform;  // layout-type => miiskira_graph_uniform_s
+	graph_gpipe_param_s *param;
+	graph_pipe_cache_s *cache;
 };
 
 // 呈现
@@ -87,6 +100,7 @@ struct miiskira_graph_s {
 	struct miiskira_graph_parser_s *parser;
 	hashmap_t layout;   // name => miiskira_graph_layout_s
 	hashmap_t shader;   // name => miiskira_graph_shader_s
+	hashmap_t gpipe;    // name => miiskira_graph_gpipe_s
 	hashmap_t present;  // name => miiskira_graph_present_s
 };
 
@@ -128,6 +142,7 @@ struct miiskira_graph_s* inner_miiskira_graph_parse_pocket(struct miiskira_graph
 hashmap_t* inner_miiskira_graph_initial_layout_type(hashmap_t *restrict layout_type);
 struct miiskira_graph_layout_s* inner_miiskira_graph_layout_alloc(void);
 struct miiskira_graph_layout_s* inner_miiskira_graph_layout_append(struct miiskira_graph_layout_s *restrict layout, const hashmap_t *restrict layout_type, const char *restrict name, const char *restrict type, const void *data, uintptr_t size);
+graph_vertex_input_description_s* inner_miiskira_graph_layout_get_vertex_desc(struct miiskira_graph_layout_s *restrict layout);
 
 // inner.shader.c
 
@@ -136,5 +151,11 @@ struct miiskira_graph_shader_s* inner_miiskira_graph_shader_alloc(graph_dev_s *r
 void inner_miiskira_graph_shader_set_input(struct miiskira_graph_shader_s *restrict shader, struct miiskira_graph_layout_s *restrict layout);
 void inner_miiskira_graph_shader_set_output(struct miiskira_graph_shader_s *restrict shader, struct miiskira_graph_layout_s *restrict layout);
 struct miiskira_graph_uniform_s* inner_miiskira_graph_shader_add_uniform_layout(struct miiskira_graph_shader_s *restrict shader, uint32_t binding, struct miiskira_graph_layout_s *restrict layout, uint32_t share_model, uint32_t share_pipe, uint32_t share_present);
+
+// inner.gpipe.c
+
+struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_alloc(struct miiskira_graph_s *restrict p, uintptr_t shader_number, const char *const shader_name[], const char *const shader_entry[]);
+struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_set_assembly(struct miiskira_graph_gpipe_s *restrict r, graph_primitive_topology_t topology);
+struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_okay(struct miiskira_graph_gpipe_s *restrict r);
 
 #endif

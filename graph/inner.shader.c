@@ -94,6 +94,12 @@ struct miiskira_graph_uniform_s* inner_miiskira_graph_shader_add_uniform_layout(
 	{
 		if ((uniform = inner_miiskira_graph_uniform_alloc_empty()))
 		{
+			uniform->binding = binding;
+			uniform->shader_stage = (graph_shader_stage_flags_t) shader->type;
+			uniform->layout = (struct miiskira_graph_layout_s *) refer_save(layout);
+			uniform->share_model = share_model;
+			uniform->share_pipe = share_pipe;
+			uniform->share_present = share_present;
 			vl = vattr_insert_tail(shader->uniform, "layout", uniform);
 			refer_free(uniform);
 			if (vl) return uniform;

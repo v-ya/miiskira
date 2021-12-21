@@ -98,6 +98,7 @@ hashmap_t* inner_miiskira_graph_initial_layout_type(hashmap_t *restrict layout_t
 static void inner_miiskira_graph_layout_free_func(struct miiskira_graph_layout_s *restrict r)
 {
 	if (r->area) refer_free(r->area);
+	if (r->vertex_desc) refer_free(r->vertex_desc);
 }
 
 struct miiskira_graph_layout_s* inner_miiskira_graph_layout_alloc(void)
@@ -126,7 +127,7 @@ struct miiskira_graph_layout_s* inner_miiskira_graph_layout_append(struct miiski
 	hashmap_vlist_t *restrict vl;
 	uintptr_t offset, type_size;
 	offset = layout->size;
-	if (type && (vl = hashmap_find_name(layout_type, type)) &&
+	if (type && size && (vl = hashmap_find_name(layout_type, type)) &&
 		(type_size = inner_miiskira_graph_layout_check_type_size(size,
 			(enum miiskira_graph_layout_type_t) (uintptr_t) vl->value)))
 	{
@@ -144,9 +145,64 @@ struct miiskira_graph_layout_s* inner_miiskira_graph_layout_append(struct miiski
 			vlist = vattr_insert_tail(layout->area, name, range);
 			refer_free(range);
 			if (!vlist) goto label_fail;
+			layout += size / type_size;
 		}
 		return layout;
 	}
 	label_fail:
 	return NULL;
+}
+
+graph_vertex_input_description_s* inner_miiskira_graph_layout_get_vertex_desc(struct miiskira_graph_layout_s *restrict layout)
+{
+	if (!layout->vertex_desc)
+	{
+		graph_vertex_input_description_s *restrict vid;
+		struct miiskira_graph_range_s *restrict range;
+		vattr_vlist_t *restrict v;
+		uint32_t index, location, offset, size, nl;
+		graph_format_t format;
+		if ((vid = graph_vertex_input_description_alloc(0, layout->attr_number)))
+		{
+			graph_vertex_input_description_set_bind(vid, 0, 0, (uint32_t) layout->size, graph_vertex_input_rate_vertex);
+			index = location = 0;
+			for (v = layout->area->vattr; v; v = v->vattr_next)
+			{
+				range = (struct miiskira_graph_range_s *) v->value;
+				switch (range->type)
+				{
+					#define d_case(_type, _format, _nl)  case miiskira_graph_layout_type__##_type: format = graph_format_##_format; nl = _nl; break
+					d_case(float,  r32_sfloat,          1);
+					d_case(vec2,   r32g32_sfloat,       1);
+					d_case(vec3,   r32g32b32_sfloat,    1);
+					d_case(vec4,   r32g32b32a32_sfloat, 1);
+					d_case(double, r64_sfloat,          2);
+					d_case(dvec2,  r64g64_sfloat,       2);
+					d_case(dvec3,  r64g64b64_sfloat,    2);
+					d_case(dvec4,  r64g64b64a64_sfloat, 2);
+					d_case(int,    r32_sint,            1);
+					d_case(ivec2,  r32g32_sint,         1);
+					d_case(ivec3,  r32g32b32_sint,      1);
+					d_case(ivec4,  r32g32b32a32_sint,   1);
+					d_case(uint,   r32_uint,            1);
+					d_case(uvec2,  r32g32_uint,         1);
+					d_case(uvec3,  r32g32b32_uint,      1);
+					d_case(uvec4,  r32g32b32a32_uint,   1);
+					#undef d_case
+					default: refer_free(vid); goto label_fail;
+				}
+				offset = (uint32_t) range->offset;
+				size = (uint32_t) range->size;
+				do {
+					graph_vertex_input_description_set_attr(vid, index++, location, 0, offset, format);
+					location += nl;
+					offset += (uint32_t) range->type_size;
+					size -= (uint32_t) range->type_size;
+				} while (size);
+			}
+			layout->vertex_desc = vid;
+		}
+	}
+	label_fail:
+	return layout->vertex_desc;
 }

@@ -1,6 +1,7 @@
 #include "graph.posky.h"
 #include <pocket/pocket.h>
 #include <stdlib.h>
+#include <alloca.h>
 
 // layout
 
@@ -209,12 +210,121 @@ static struct miiskira_graph_s* inner_miiskira_graph_parse_render_shader(struct 
 	return NULL;
 }
 
+// g-pipe
+
+static graph_primitive_topology_t inner_miiskira_graph_parse_render_gpipe_get_topology(const char *restrict tp)
+{
+	uint32_t c, n;
+	c = n = 0;
+	if (!tp) goto label_fail;
+	while (*tp)
+	{
+		c = (c << 8) | *(const uint8_t *) tp++;
+		++n;
+	}
+	if (n < 4)
+	{
+		switch (c)
+		{
+			case ('p' << 8 | 'l'): return graph_primitive_topology_point_list;
+			case ('l' << 8 | 'l'): return graph_primitive_topology_line_list;
+			case ('l' << 8 | 's'): return graph_primitive_topology_line_strip;
+			case ('t' << 8 | 'l'): return graph_primitive_topology_triangle_list;
+			case ('t' << 8 | 's'): return graph_primitive_topology_triangle_strip;
+			case ('t' << 8 | 'f'): return graph_primitive_topology_triangle_fan;
+			case ('l' << 16 | 'l' << 8 | 'a'): return graph_primitive_topology_line_list_with_adjacency;
+			case ('l' << 16 | 's' << 8 | 'a'): return graph_primitive_topology_line_strip_with_adjacency;
+			case ('t' << 16 | 'l' << 8 | 'a'): return graph_primitive_topology_triangle_list_with_adjacency;
+			case ('t' << 16 | 's' << 8 | 'a'): return graph_primitive_topology_triangle_strip_with_adjacency;
+		}
+	}
+	label_fail:
+	return graph_primitive_topology$number;
+}
+
+static struct miiskira_graph_gpipe_s* inner_miiskira_graph_parse_render_gpipe_create(struct miiskira_graph_s *restrict r, pocket_s *restrict p, const pocket_attr_t *restrict a)
+{
+	struct miiskira_graph_gpipe_s *restrict gpipe;
+	const pocket_attr_t *restrict v;
+	const char **s;
+	uintptr_t i, n;
+	graph_primitive_topology_t tp;
+	gpipe = NULL;
+	if (!pocket_is_tag(p, a, pocket_tag$index, NULL))
+		goto label_fail;
+	// shader
+	if (!(v = pocket_find_tag(p, a, "shader", pocket_tag$index, NULL)))
+		goto label_fail;
+	n = (uintptr_t) v->size;
+	v = (const pocket_attr_t *) v->data.ptr;
+	if (!(s = (const char **) alloca(sizeof(*s) * 2 * n)))
+		goto label_fail;
+	for (i = 0; i < n; ++i)
+	{
+		if (!pocket_is_tag(p, v + i, pocket_tag$string, NULL))
+			goto label_fail;
+		s[i] = v[i].name.string;
+		s[n + i] = (const char *) v[i].data.ptr;
+		log_verbose("[graph] render.g-pipe shader(%s) entry(%s)", s[i]?s[i]:"", s[n + i]?s[n + i]:"");
+	}
+	gpipe = inner_miiskira_graph_gpipe_alloc(r, n, s, s + n);
+	if (!gpipe)
+		goto label_fail;
+	// shader
+	if (!(v = pocket_find_tag(p, a, "topology", pocket_tag$string, NULL)))
+		goto label_fail;
+	if ((uint32_t) (tp = inner_miiskira_graph_parse_render_gpipe_get_topology((const char *) v->data.ptr)) >= graph_primitive_topology$number)
+		goto label_fail;
+	if (!inner_miiskira_graph_gpipe_set_assembly(gpipe, tp))
+		goto label_fail;
+	log_verbose("[graph] render.g-pipe topology(%s)", (const char *) v->data.ptr);
+	// okay
+	if (!inner_miiskira_graph_gpipe_okay(gpipe))
+		goto label_fail;
+	return gpipe;
+	label_fail:
+	if (gpipe) refer_free(gpipe);
+	return NULL;
+}
+
+static struct miiskira_graph_s* inner_miiskira_graph_parse_render_gpipe(struct miiskira_graph_s *restrict r, pocket_s *restrict p, const pocket_attr_t *restrict a)
+{
+	struct miiskira_graph_gpipe_s *restrict gpipe;
+	uint64_t n;
+	gpipe = NULL;
+	if (!pocket_is_tag(p, a, pocket_tag$index, NULL))
+		goto label_fail;
+	n = a->size;
+	a = (const pocket_attr_t *) a->data.ptr;
+	while (n)
+	{
+		--n;
+		if (!a->name.string)
+			goto label_fail;
+		if (hashmap_find_name(&r->gpipe, a->name.string))
+			goto label_fail;
+		if (!(gpipe = inner_miiskira_graph_parse_render_gpipe_create(r, p, a)))
+			goto label_fail;
+		if (!hashmap_set_name(&r->gpipe, a->name.string, gpipe, inner_miiskira_graph_hashmap_free_func))
+			goto label_fail;
+		gpipe = NULL;
+		log_info("[graph] load render.g-pipe (%s)", a->name.string);
+		++a;
+	}
+	return r;
+	label_fail:
+	if (gpipe) refer_free(gpipe);
+	log_error("[graph] load render.g-pipe (%s) fail", a->name.string?a->name.string:"");
+	return NULL;
+}
+
 // initial
 
 hashmap_t* inner_miiskira_graph_initial_render_parser(hashmap_t *restrict parser)
 {
 	if (hashmap_set_name(parser, "layout", inner_miiskira_graph_parse_render_layout, NULL) &&
-		hashmap_set_name(parser, "shader", inner_miiskira_graph_parse_render_shader, NULL))
+		hashmap_set_name(parser, "shader", inner_miiskira_graph_parse_render_shader, NULL) &&
+		hashmap_set_name(parser, "g-pipe", inner_miiskira_graph_parse_render_gpipe, NULL))
 		return parser;
 	return NULL;
 }

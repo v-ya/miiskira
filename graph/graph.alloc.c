@@ -181,6 +181,7 @@ static struct miiskira_graph_device_s* inner_miiskira_graph_device_create_dev(st
 static void inner_miiskira_graph_device_free_func(struct miiskira_graph_device_s *restrict r)
 {
 	if (r->dev) refer_free(r->dev);
+	if (r->pipe_cache) refer_free(r->pipe_cache);
 	if (r->list_queue) refer_free(r->list_queue);
 	if (r->list_device) refer_free(r->list_device);
 }
@@ -201,6 +202,8 @@ static struct miiskira_graph_device_s* inner_miiskira_graph_device_alloc(graph_s
 		if (!r->select_queue_graphics || !r->select_queue_transfer)
 			goto label_fail;
 		if (!inner_miiskira_graph_device_create_dev(r, graph, debug_level))
+			goto label_fail;
+		if (!(r->pipe_cache = graph_pipe_cache_alloc(r->dev)))
 			goto label_fail;
 		return r;
 		label_fail:
@@ -251,6 +254,7 @@ static struct miiskira_graph_parser_s* inner_miiskira_graph_parser_alloc(void)
 static void inner_miiskira_graph_free_func(struct miiskira_graph_s *restrict r)
 {
 	hashmap_uini(&r->present);
+	hashmap_uini(&r->gpipe);
 	hashmap_uini(&r->shader);
 	hashmap_uini(&r->layout);
 	if (r->parser) refer_free(r->parser);
@@ -266,6 +270,7 @@ struct miiskira_graph_s* inner_miiskira_graph_alloc(mlog_s *ml, uint32_t debug_l
 		refer_set_free(r, (refer_free_f) inner_miiskira_graph_free_func);
 		if (!hashmap_init(&r->layout)) goto label_fail;
 		if (!hashmap_init(&r->shader)) goto label_fail;
+		if (!hashmap_init(&r->gpipe)) goto label_fail;
 		if (!hashmap_init(&r->present)) goto label_fail;
 		if (!(r->parser = inner_miiskira_graph_parser_alloc()))
 			goto label_fail;
