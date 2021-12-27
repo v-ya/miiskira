@@ -214,11 +214,22 @@ struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_set_blend(struct miisk
 	return NULL;
 }
 
+struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_set_render(struct miiskira_graph_gpipe_s *restrict r, graph_render_pass_s *restrict render, uint32_t index)
+{
+	graph_gpipe_param_set_render(r->param, render, index);
+	return r;
+}
+
+struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_set_dynamic(struct miiskira_graph_gpipe_s *restrict r, uint32_t n, const graph_dynamic_t dynamic[])
+{
+	if (graph_gpipe_param_set_dynamic(r->param, n, dynamic))
+		return r;
+	return NULL;
+}
+
 struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_okay(struct miiskira_graph_gpipe_s *restrict r)
 {
 	if (r->pipe) goto label_okay;
-	// graph_gpipe_param_set_dynamic();
-	// graph_gpipe_param_set_render();
 	// graph_gpipe_param_set_rasterization_depth_clamp();
 	// graph_gpipe_param_set_rasterization_discard();
 	// graph_gpipe_param_set_rasterization_polygon();

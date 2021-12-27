@@ -67,6 +67,13 @@ struct miiskira_graph_uniform_s {
 	uint32_t share_present;
 };
 
+// 渲染流程
+struct miiskira_graph_render_pass_s {
+	graph_render_pass_s *render;
+	hashmap_t a2i; // attachment-name => index
+	hashmap_t p2i; // subpass-name    => index
+};
+
 // 着色器
 struct miiskira_graph_shader_s {
 	graph_shader_type_t type;
@@ -100,6 +107,7 @@ struct miiskira_graph_s {
 	struct miiskira_graph_parser_s *parser;
 	hashmap_t layout;   // name => miiskira_graph_layout_s
 	hashmap_t blend;    // name => graph_pipe_color_blend_s
+	hashmap_t render;   // name => miiskira_graph_render_pass_s
 	hashmap_t shader;   // name => miiskira_graph_shader_s
 	hashmap_t gpipe;    // name => miiskira_graph_gpipe_s
 	hashmap_t present;  // name => miiskira_graph_present_s
@@ -158,6 +166,8 @@ struct miiskira_graph_uniform_s* inner_miiskira_graph_shader_add_uniform_layout(
 struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_alloc(struct miiskira_graph_s *restrict p, uintptr_t shader_number, const char *const shader_name[], const char *const shader_entry[]);
 struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_set_assembly(struct miiskira_graph_gpipe_s *restrict r, graph_primitive_topology_t topology);
 struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_set_blend(struct miiskira_graph_gpipe_s *restrict r, graph_pipe_color_blend_s *restrict blend);
+struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_set_render(struct miiskira_graph_gpipe_s *restrict r, graph_render_pass_s *restrict render, uint32_t index);
+struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_set_dynamic(struct miiskira_graph_gpipe_s *restrict r, uint32_t n, const graph_dynamic_t dynamic[]);
 struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_okay(struct miiskira_graph_gpipe_s *restrict r);
 
 #endif

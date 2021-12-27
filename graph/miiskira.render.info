@@ -83,6 +83,57 @@
 				#     "max"  = max((src), (dst))
 			# ...
 
+# 添加渲染流程
+["render" render]
+	[render "name" render-define]
+		[render-define "attachment" render-attachment]
+			# 定义渲染附件
+			[render-attachment "a-name"] # 附件名称，用来下方引用
+				"format" @string => ""        # (必选) 格式，可选取值见 format
+				"sample" @string => ""        # (必选) 采样方式，可选取值见 sample
+				"load" @string => ""          # (必选) 加载方式，可选取值见 load
+				"store" @string => ""         # (必选) 储存方式，可选取值见 store
+				"stencil_load" @string => ""  # (可选) 加载方式，可选取值见 load
+				"stencil_store" @string => "" # (可选) 储存方式，可选取值见 store
+				"initial" @string => ""       # (必选) 起始布局，可选取值见 layout
+				"finally" @string => ""       # (必选) 结束布局，可选取值见 layout
+				# format:
+				#     "bgra"
+				# sample:
+				#     "1"
+				#     "2"
+				#     "4"
+				#     "8"
+				#     "16"
+				#     "32"
+				#     "64"
+				# load:
+				#     "load"
+				#     "clear"
+				#     "none"
+				# store:
+				#     "store"
+				#     "none"
+				# layout:
+				#     "undefined"
+				#     "general"
+				#     "color_attachment_optimal"
+				#     "depth_stencil_attachment_optimal"
+				#     "depth_stencil_read_only_optimal"
+				#     "transfer_src_optimal"
+				#     "transfer_dst_optimal"
+				#     "preinitialized"
+				#     "khr_present_src"
+			# ...
+		[render-define "subpass" render-subpass]
+			# 定义渲染步骤
+			[render-attachment "p-name"]                   # 步骤名称，用来下方引用
+				"type" @string => ""                   # (必选) 类型，可选取值见 type
+				"color" @index                         # (可选) 设置颜色附件
+					"color" "a-name" @string => "" # (可选) 引用附件，可选取值见 layout
+					# ...
+			# ...
+
 # 添加着色器
 ["shader" shader]
 	[shader "name" shader-define]
@@ -135,3 +186,15 @@
 	[g-pipe-define]
 		# 设置色彩混合
 		"blend" @string => "blend-name"
+		"render" @string => "render-name"
+		"render.pass" @string => "render.p-name"
+		[g-pipe-define "dynamic" g-pipe-dynamic]
+			# (可选) 设置动态属性
+			# 下发属性均可选，存在则启用
+			"line_width" @null           # 线宽
+			"depth_bias" @null           #
+			"blend_constants" @null      # 混合常量 (blend.color)
+			"depth_bounds" @null         #
+			"stencil_compare_mask" @null #
+			"stencil_write_mask" @null   #
+			"stencil_reference" @null    #

@@ -169,7 +169,7 @@ static graph_blend_op_t inner_miiskira_graph_parse_render_blend_get_op(const cha
 static graph_pipe_color_blend_s* inner_miiskira_graph_parse_render_blend_create(struct miiskira_graph_s *restrict r, pocket_s *restrict p, const pocket_attr_t *restrict a)
 {
 	const pocket_attr_t *restrict attach, *restrict v;
-	struct graph_pipe_color_blend_s *restrict blend;
+	graph_pipe_color_blend_s *restrict blend;
 	uint64_t n;
 	blend = NULL;
 	if (!pocket_is_tag(p, a, pocket_tag$index, NULL))
@@ -294,6 +294,56 @@ static struct miiskira_graph_s* inner_miiskira_graph_parse_render_blend(struct m
 	label_fail:
 	if (blend) refer_free(blend);
 	log_error("[graph] load render.blend (%s) fail", a->name.string?a->name.string:"");
+	return NULL;
+}
+
+// render
+
+static struct miiskira_graph_render_pass_s* inner_miiskira_graph_parse_render_render_create(struct miiskira_graph_s *restrict r, pocket_s *restrict p, const pocket_attr_t *restrict a)
+{
+	struct miiskira_graph_render_pass_s *restrict render;
+	render = NULL;
+	if (!pocket_is_tag(p, a, pocket_tag$index, NULL))
+		goto label_fail;
+	// graph_render_pass_param_s* graph_render_pass_param_alloc(uint32_t attachment_number, uint32_t subpass_number, uint32_t dependency_number, uint32_t aref_number);
+	// graph_render_pass_param_s* graph_render_pass_param_set_attachment(graph_render_pass_param_s *restrict r, uint32_t index, graph_format_t format, graph_sample_count_t sample, graph_attachment_load_op_t load, graph_attachment_store_op_t store, graph_attachment_load_op_t stencil_load, graph_attachment_store_op_t stencil_store, graph_image_layout_t initial, graph_image_layout_t final);
+	// graph_render_pass_param_s* graph_render_pass_param_set_subpass(graph_render_pass_param_s *restrict r, uint32_t index, graph_pipeline_bind_point_t type);
+	// graph_render_pass_param_s* graph_render_pass_param_set_subpass_color(graph_render_pass_param_s *restrict r, uint32_t index, uint32_t n, uint32_t at_index[], graph_image_layout_t layout[]);
+	// graph_render_pass_s* graph_render_pass_alloc(graph_render_pass_param_s *restrict param, struct graph_dev_s *restrict dev);
+	return render;
+	label_fail:
+	if (render) refer_free(render);
+	return NULL;
+}
+
+static struct miiskira_graph_s* inner_miiskira_graph_parse_render_render(struct miiskira_graph_s *restrict r, pocket_s *restrict p, const pocket_attr_t *restrict a)
+{
+	struct miiskira_graph_render_pass_s *restrict render;
+	uint64_t n;
+	render = NULL;
+	if (!pocket_is_tag(p, a, pocket_tag$index, NULL))
+		goto label_fail;
+	n = a->size;
+	a = (const pocket_attr_t *) a->data.ptr;
+	while (n)
+	{
+		--n;
+		if (!a->name.string)
+			goto label_fail;
+		if (hashmap_find_name(&r->render, a->name.string))
+			goto label_fail;
+		if (!(render = inner_miiskira_graph_parse_render_render_create(r, p, a)))
+			goto label_fail;
+		if (!hashmap_set_name(&r->render, a->name.string, render, inner_miiskira_graph_hashmap_free_func))
+			goto label_fail;
+		render = NULL;
+		log_info("[graph] load render.render (%s)", a->name.string);
+		++a;
+	}
+	return r;
+	label_fail:
+	if (render) refer_free(render);
+	log_error("[graph] load render.render (%s) fail", a->name.string?a->name.string:"");
 	return NULL;
 }
 
@@ -454,54 +504,105 @@ static graph_primitive_topology_t inner_miiskira_graph_parse_render_gpipe_get_to
 	return graph_primitive_topology$number;
 }
 
-static struct miiskira_graph_gpipe_s* inner_miiskira_graph_parse_render_gpipe_create(struct miiskira_graph_s *restrict r, pocket_s *restrict p, const pocket_attr_t *restrict a)
+static struct miiskira_graph_gpipe_s* inner_miiskira_graph_parse_render_gpipe_create_shader(struct miiskira_graph_s *restrict r, pocket_s *restrict p, const pocket_attr_t *restrict a)
 {
-	struct miiskira_graph_gpipe_s *restrict gpipe;
-	graph_pipe_color_blend_s *restrict blend;
-	const pocket_attr_t *restrict v;
-	const char **s;
 	uintptr_t i, n;
-	graph_primitive_topology_t tp;
-	gpipe = NULL;
-	if (!pocket_is_tag(p, a, pocket_tag$index, NULL))
+	const char **s;
+	if (!(a = pocket_find_tag(p, a, "shader", pocket_tag$index, NULL)))
 		goto label_fail;
-	// shader
-	if (!(v = pocket_find_tag(p, a, "shader", pocket_tag$index, NULL)))
-		goto label_fail;
-	n = (uintptr_t) v->size;
-	v = (const pocket_attr_t *) v->data.ptr;
+	n = (uintptr_t) a->size;
+	a = (const pocket_attr_t *) a->data.ptr;
 	if (!(s = (const char **) alloca(sizeof(*s) * 2 * n)))
 		goto label_fail;
 	for (i = 0; i < n; ++i)
 	{
-		if (!pocket_is_tag(p, v + i, pocket_tag$string, NULL))
+		if (!pocket_is_tag(p, a + i, pocket_tag$string, NULL))
 			goto label_fail;
-		s[i] = v[i].name.string;
-		s[n + i] = (const char *) v[i].data.ptr;
+		s[i] = a[i].name.string;
+		s[n + i] = (const char *) a[i].data.ptr;
 		log_verbose("[graph] render.g-pipe shader(%s) entry(%s)", s[i]?s[i]:"", s[n + i]?s[n + i]:"");
 	}
-	gpipe = inner_miiskira_graph_gpipe_alloc(r, n, s, s + n);
-	if (!gpipe)
+	return inner_miiskira_graph_gpipe_alloc(r, n, s, s + n);
+	label_fail:
+	log_warning("[graph] render.g-pipe shader fail");
+	return NULL;
+}
+
+static struct miiskira_graph_gpipe_s* inner_miiskira_graph_parse_render_gpipe_create_topology(struct miiskira_graph_gpipe_s *restrict gpipe, pocket_s *restrict p, const pocket_attr_t *restrict a)
+{
+	graph_primitive_topology_t tp;
+	if (!(a = pocket_find_tag(p, a, "topology", pocket_tag$string, NULL)))
 		goto label_fail;
-	// topology
-	if (!(v = pocket_find_tag(p, a, "topology", pocket_tag$string, NULL)))
-		goto label_fail;
-	if ((uint32_t) (tp = inner_miiskira_graph_parse_render_gpipe_get_topology((const char *) v->data.ptr)) >= graph_primitive_topology$number)
+	if ((uint32_t) (tp = inner_miiskira_graph_parse_render_gpipe_get_topology((const char *) a->data.ptr)) >= graph_primitive_topology$number)
 		goto label_fail;
 	if (!inner_miiskira_graph_gpipe_set_assembly(gpipe, tp))
 		goto label_fail;
-	log_verbose("[graph] render.g-pipe topology(%s)", (const char *) v->data.ptr);
-	// blend
-	if (!(v = pocket_find_tag(p, a, "blend", pocket_tag$string, NULL)))
+	log_verbose("[graph] render.g-pipe topology(%s)", (const char *) a->data.ptr);
+	return gpipe;
+	label_fail:
+	log_warning("[graph] render.g-pipe topology fail");
+	return NULL;
+}
+
+static struct miiskira_graph_gpipe_s* inner_miiskira_graph_parse_render_gpipe_create_blend(struct miiskira_graph_gpipe_s *restrict gpipe, struct miiskira_graph_s *restrict r, pocket_s *restrict p, const pocket_attr_t *restrict a)
+{
+	graph_pipe_color_blend_s *restrict blend;
+	if (!(a = pocket_find_tag(p, a, "blend", pocket_tag$string, NULL)))
 		goto label_fail;
-	if (!v->data.ptr)
+	if (!a->data.ptr)
 		goto label_fail;
-	if (!(blend = (graph_pipe_color_blend_s *) hashmap_get_name(&r->blend, (const char *) v->data.ptr)))
+	if (!(blend = (graph_pipe_color_blend_s *) hashmap_get_name(&r->blend, (const char *) a->data.ptr)))
 		goto label_fail;
 	if (!inner_miiskira_graph_gpipe_set_blend(gpipe, blend))
 		goto label_fail;
-	log_verbose("[graph] render.g-pipe blend(%s)", (const char *) v->data.ptr);
-	// okay
+	log_verbose("[graph] render.g-pipe blend(%s)", (const char *) a->data.ptr);
+	return gpipe;
+	label_fail:
+	log_warning("[graph] render.g-pipe blend fail");
+	return NULL;
+}
+
+static struct miiskira_graph_gpipe_s* inner_miiskira_graph_parse_render_gpipe_create_dynamic(struct miiskira_graph_gpipe_s *restrict gpipe, pocket_s *restrict p, const pocket_attr_t *restrict a)
+{
+	graph_dynamic_t dynamic[graph_dynamic$number];
+	uint32_t n;
+	n = 0;
+	dynamic[n++] = graph_dynamic_viewport;
+	dynamic[n++] = graph_dynamic_scissor;
+	if ((a = pocket_find(p, a, "dynamic")))
+	{
+		if (!pocket_is_tag(p, a, pocket_tag$index, NULL))
+			goto label_fail;
+		if (pocket_find(p, a, "line_width"))           dynamic[n++] = graph_dynamic_line_width;
+		if (pocket_find(p, a, "depth_bias"))           dynamic[n++] = graph_dynamic_depth_bias;
+		if (pocket_find(p, a, "blend_constants"))      dynamic[n++] = graph_dynamic_blend_constants;
+		if (pocket_find(p, a, "depth_bounds"))         dynamic[n++] = graph_dynamic_depth_bounds;
+		if (pocket_find(p, a, "stencil_compare_mask")) dynamic[n++] = graph_dynamic_stencil_compare_mask;
+		if (pocket_find(p, a, "stencil_write_mask"))   dynamic[n++] = graph_dynamic_stencil_write_mask;
+		if (pocket_find(p, a, "stencil_reference"))    dynamic[n++] = graph_dynamic_stencil_reference;
+	}
+	if (!inner_miiskira_graph_gpipe_set_dynamic(gpipe, n, dynamic))
+		goto label_fail;
+	return gpipe;
+	label_fail:
+	log_warning("[graph] render.g-pipe dynamic fail");
+	return NULL;
+}
+
+static struct miiskira_graph_gpipe_s* inner_miiskira_graph_parse_render_gpipe_create(struct miiskira_graph_s *restrict r, pocket_s *restrict p, const pocket_attr_t *restrict a)
+{
+	struct miiskira_graph_gpipe_s *restrict gpipe;
+	gpipe = NULL;
+	if (!pocket_is_tag(p, a, pocket_tag$index, NULL))
+		goto label_fail;
+	if (!(gpipe = inner_miiskira_graph_parse_render_gpipe_create_shader(r, p, a)))
+		goto label_fail;
+	if (!inner_miiskira_graph_parse_render_gpipe_create_topology(gpipe, p, a))
+		goto label_fail;
+	if (!inner_miiskira_graph_parse_render_gpipe_create_blend(gpipe, r, p, a))
+		goto label_fail;
+	if (!inner_miiskira_graph_parse_render_gpipe_create_dynamic(gpipe, p, a))
+		goto label_fail;
 	if (!inner_miiskira_graph_gpipe_okay(gpipe))
 		goto label_fail;
 	return gpipe;
@@ -547,6 +648,7 @@ hashmap_t* inner_miiskira_graph_initial_render_parser(hashmap_t *restrict parser
 {
 	if (hashmap_set_name(parser, "layout", inner_miiskira_graph_parse_render_layout, NULL) &&
 		hashmap_set_name(parser, "blend", inner_miiskira_graph_parse_render_blend, NULL) &&
+		hashmap_set_name(parser, "render", inner_miiskira_graph_parse_render_render, NULL) &&
 		hashmap_set_name(parser, "shader", inner_miiskira_graph_parse_render_shader, NULL) &&
 		hashmap_set_name(parser, "g-pipe", inner_miiskira_graph_parse_render_gpipe, NULL))
 		return parser;

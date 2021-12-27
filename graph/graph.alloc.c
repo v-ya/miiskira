@@ -256,6 +256,7 @@ static void inner_miiskira_graph_free_func(struct miiskira_graph_s *restrict r)
 	hashmap_uini(&r->present);
 	hashmap_uini(&r->gpipe);
 	hashmap_uini(&r->shader);
+	hashmap_uini(&r->render);
 	hashmap_uini(&r->blend);
 	hashmap_uini(&r->layout);
 	if (r->parser) refer_free(r->parser);
@@ -271,6 +272,7 @@ struct miiskira_graph_s* inner_miiskira_graph_alloc(mlog_s *ml, uint32_t debug_l
 		refer_set_free(r, (refer_free_f) inner_miiskira_graph_free_func);
 		if (!hashmap_init(&r->layout)) goto label_fail;
 		if (!hashmap_init(&r->blend)) goto label_fail;
+		if (!hashmap_init(&r->render)) goto label_fail;
 		if (!hashmap_init(&r->shader)) goto label_fail;
 		if (!hashmap_init(&r->gpipe)) goto label_fail;
 		if (!hashmap_init(&r->present)) goto label_fail;
