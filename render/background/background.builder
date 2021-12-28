@@ -26,3 +26,5 @@
 	[bg]
 		"topology" @string => "tl"
 		"blend" @string => "default"
+		"render" @string => "default"
+		"subpass" @string => "p-color"

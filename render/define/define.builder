@@ -28,3 +28,23 @@
 				"src-alpha" @string => "1"
 				"dst-alpha" @string => "0"
 				"op-alpha" @string => "+"
+
+# render
+["render" render]
+	[render "default" -]
+		[- "attachment"]
+			[~ "a-color"]
+				"format" @string => "b8g8r8a8_unorm"
+				"sample" @string => "1"
+				"load" @string => "clear"
+				"store" @string => "store"
+				"stencil_load" @string => "none"
+				"stencil_store" @string => "none"
+				"initial" @string => "undefined"
+				"finally" @string => "khr_present_src"
+		[- "subpass"]
+			[~ "p-color"]
+				"type" @string => "graphics"
+				[~ "color"]
+					"a-color" @string => "color_attachment_optimal"
+
