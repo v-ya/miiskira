@@ -38,7 +38,9 @@ struct miiskira_graph_parser_s {
 	hashmap_t render;
 	hashmap_t model;
 	hashmap_t layout_type;
+	hashmap_t format_type;
 	hashmap_t shader_type;
+	hashmap_t image_layout_type;
 	fsys_rpath_s *rpath;
 };
 
@@ -70,6 +72,7 @@ struct miiskira_graph_uniform_s {
 // 渲染流程
 struct miiskira_graph_render_pass_s {
 	graph_render_pass_s *render;
+	graph_render_pass_param_s *param;
 	hashmap_t a2i; // attachment-name => index
 	hashmap_t p2i; // subpass-name    => index
 };
@@ -105,6 +108,7 @@ struct miiskira_graph_s {
 	graph_s *graph;
 	struct miiskira_graph_device_s *device;
 	struct miiskira_graph_parser_s *parser;
+	graph_viewports_scissors_s *viewport;
 	hashmap_t layout;   // name => miiskira_graph_layout_s
 	hashmap_t blend;    // name => graph_pipe_color_blend_s
 	hashmap_t render;   // name => miiskira_graph_render_pass_s
@@ -153,6 +157,14 @@ struct miiskira_graph_layout_s* inner_miiskira_graph_layout_alloc(void);
 struct miiskira_graph_layout_s* inner_miiskira_graph_layout_append(struct miiskira_graph_layout_s *restrict layout, const hashmap_t *restrict layout_type, const char *restrict name, const char *restrict type, const void *data, uintptr_t size);
 graph_vertex_input_description_s* inner_miiskira_graph_layout_get_vertex_desc(struct miiskira_graph_layout_s *restrict layout);
 
+// inner.format.c
+
+hashmap_t* inner_miiskira_graph_initial_format_type(hashmap_t *restrict format_type);
+
+// inner.image_layout.c
+
+hashmap_t* inner_miiskira_graph_initial_image_layout_type(hashmap_t *restrict image_layout_type);
+
 // inner.shader.c
 
 hashmap_t* inner_miiskira_graph_initial_shader_type(hashmap_t *restrict shader_type);
@@ -165,6 +177,7 @@ struct miiskira_graph_uniform_s* inner_miiskira_graph_shader_add_uniform_layout(
 
 struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_alloc(struct miiskira_graph_s *restrict p, uintptr_t shader_number, const char *const shader_name[], const char *const shader_entry[]);
 struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_set_assembly(struct miiskira_graph_gpipe_s *restrict r, graph_primitive_topology_t topology);
+struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_set_viewport(struct miiskira_graph_gpipe_s *restrict r, graph_viewports_scissors_s *restrict viewport);
 struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_set_blend(struct miiskira_graph_gpipe_s *restrict r, graph_pipe_color_blend_s *restrict blend);
 struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_set_render(struct miiskira_graph_gpipe_s *restrict r, graph_render_pass_s *restrict render, uint32_t index);
 struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_set_dynamic(struct miiskira_graph_gpipe_s *restrict r, uint32_t n, const graph_dynamic_t dynamic[]);

@@ -202,7 +202,21 @@ struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_alloc(struct miiskira_
 
 struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_set_assembly(struct miiskira_graph_gpipe_s *restrict r, graph_primitive_topology_t topology)
 {
-	if (graph_gpipe_param_set_assembly(r->param, topology, 1))
+	graph_bool_t restart;
+	restart = (topology == graph_primitive_topology_line_strip ||
+		topology == graph_primitive_topology_triangle_strip ||
+		topology == graph_primitive_topology_triangle_fan ||
+		topology == graph_primitive_topology_line_strip_with_adjacency ||
+		topology == graph_primitive_topology_triangle_strip_with_adjacency)?
+		graph_bool_true:graph_bool_false;
+	if (graph_gpipe_param_set_assembly(r->param, topology, restart))
+		return r;
+	return NULL;
+}
+
+struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_set_viewport(struct miiskira_graph_gpipe_s *restrict r, graph_viewports_scissors_s *restrict viewport)
+{
+	if (graph_gpipe_param_set_viewport(r->param, viewport))
 		return r;
 	return NULL;
 }

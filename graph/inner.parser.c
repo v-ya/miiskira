@@ -26,6 +26,6 @@ struct miiskira_graph_s* inner_miiskira_graph_parse_pocket(struct miiskira_graph
 	}
 	return r;
 	label_fail:
-	log_warning("[graph] load pocket.%s fail", a->name.string?a->name.string:"");
+	log_warning("[graph] load pocket[%s] fail", a->name.string?a->name.string:"");
 	return NULL;
 }

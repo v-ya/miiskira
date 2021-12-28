@@ -217,7 +217,9 @@ static struct miiskira_graph_device_s* inner_miiskira_graph_device_alloc(graph_s
 static void inner_miiskira_graph_parser_free_func(struct miiskira_graph_parser_s *restrict r)
 {
 	if (r->rpath) refer_free(r->rpath);
+	hashmap_uini(&r->image_layout_type);
 	hashmap_uini(&r->shader_type);
+	hashmap_uini(&r->format_type);
 	hashmap_uini(&r->layout_type);
 	hashmap_uini(&r->model);
 	hashmap_uini(&r->render);
@@ -232,7 +234,9 @@ static struct miiskira_graph_parser_s* inner_miiskira_graph_parser_alloc(void)
 		if (!hashmap_init(&r->render)) goto label_fail;
 		if (!hashmap_init(&r->model)) goto label_fail;
 		if (!hashmap_init(&r->layout_type)) goto label_fail;
+		if (!hashmap_init(&r->format_type)) goto label_fail;
 		if (!hashmap_init(&r->shader_type)) goto label_fail;
+		if (!hashmap_init(&r->image_layout_type)) goto label_fail;
 		if (!(r->rpath = fsys_rpath_alloc(NULL, 256)))
 			goto label_fail;
 		fsys_rpath_set_delimiter(r->rpath, '.');
@@ -240,7 +244,11 @@ static struct miiskira_graph_parser_s* inner_miiskira_graph_parser_alloc(void)
 			goto label_fail;
 		if (!inner_miiskira_graph_initial_layout_type(&r->layout_type))
 			goto label_fail;
+		if (!inner_miiskira_graph_initial_format_type(&r->format_type))
+			goto label_fail;
 		if (!inner_miiskira_graph_initial_shader_type(&r->shader_type))
+			goto label_fail;
+		if (!inner_miiskira_graph_initial_image_layout_type(&r->image_layout_type))
 			goto label_fail;
 		return r;
 		label_fail:
@@ -259,6 +267,7 @@ static void inner_miiskira_graph_free_func(struct miiskira_graph_s *restrict r)
 	hashmap_uini(&r->render);
 	hashmap_uini(&r->blend);
 	hashmap_uini(&r->layout);
+	if (r->viewport) refer_free(r->viewport);
 	if (r->parser) refer_free(r->parser);
 	if (r->device) refer_free(r->device);
 	if (r->graph) refer_free(r->graph);
@@ -282,6 +291,10 @@ struct miiskira_graph_s* inner_miiskira_graph_alloc(mlog_s *ml, uint32_t debug_l
 			goto label_fail;
 		if (!(r->device = inner_miiskira_graph_device_alloc(r->graph, debug_level)))
 			goto label_fail;
+		if (!(r->viewport = graph_viewports_scissors_alloc(1, 1)))
+			goto label_fail;
+		graph_viewports_scissors_append_viewport(r->viewport, 0, 0, 0, 0, 0, 1);
+		graph_viewports_scissors_append_scissor(r->viewport, 0, 0, 0, 0);
 		return r;
 		label_fail:
 		refer_free(r);

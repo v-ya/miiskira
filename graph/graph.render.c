@@ -1,6 +1,7 @@
 #include "graph.posky.h"
 #include <pocket/pocket.h>
 #include <stdlib.h>
+#include <string.h>
 #include <alloca.h>
 
 // layout
@@ -24,7 +25,6 @@ static struct miiskira_graph_s* inner_miiskira_graph_parse_render_layout_append(
 				goto label_fail;
 			if (!inner_miiskira_graph_layout_append(layout, &parser->layout_type, name, a->tag.string, a->data.ptr, (uintptr_t) a->size))
 				goto label_fail;
-			log_verbose("[graph] render.layout: %s %s[], size = %zu", a->tag.string, name, (uintptr_t) a->size);
 		}
 		else
 		{
@@ -41,6 +41,7 @@ static struct miiskira_graph_s* inner_miiskira_graph_parse_render_layout_append(
 	}
 	return r;
 	label_fail:
+	log_warning("[graph] load render.layout (%s) fail", a->name.string);
 	return NULL;
 }
 
@@ -64,10 +65,8 @@ static struct miiskira_graph_s* inner_miiskira_graph_parse_render_layout(struct 
 			goto label_fail;
 		if (!(layout = inner_miiskira_graph_layout_alloc()))
 			goto label_fail;
-		log_verbose("[graph] load render.layout (%s) begin", a->name.string);
 		if (!inner_miiskira_graph_parse_render_layout_append(r, p, a, layout))
 			goto label_fail;
-		log_verbose("[graph] load render.layout (%s) end", a->name.string);
 		if (!hashmap_set_name(&r->layout, a->name.string, layout, inner_miiskira_graph_hashmap_free_func))
 			goto label_fail;
 		layout = NULL;
@@ -77,7 +76,7 @@ static struct miiskira_graph_s* inner_miiskira_graph_parse_render_layout(struct 
 	return r;
 	label_fail:
 	if (layout) refer_free(layout);
-	log_error("[graph] load render.layout (%s) fail", a->name.string?a->name.string:"");
+	log_warning("[graph] load render.layout fail");
 	return NULL;
 }
 
@@ -263,6 +262,7 @@ static graph_pipe_color_blend_s* inner_miiskira_graph_parse_render_blend_create(
 	return blend;
 	label_fail:
 	if (blend) refer_free(blend);
+	log_warning("[graph] load render.blend (%s) fail", a->name.string);
 	return NULL;
 }
 
@@ -293,26 +293,323 @@ static struct miiskira_graph_s* inner_miiskira_graph_parse_render_blend(struct m
 	return r;
 	label_fail:
 	if (blend) refer_free(blend);
-	log_error("[graph] load render.blend (%s) fail", a->name.string?a->name.string:"");
+	log_warning("[graph] load render.blend fail");
 	return NULL;
 }
 
 // render
 
+static void miiskira_graph_render_pass_free_func(struct miiskira_graph_render_pass_s *restrict r)
+{
+	if (r->render) refer_free(r->render);
+	if (r->param) refer_free(r->param);
+	hashmap_uini(&r->a2i);
+	hashmap_uini(&r->p2i);
+}
+
+static struct miiskira_graph_render_pass_s* inner_miiskira_graph_parse_render_render_create_render(void)
+{
+	struct miiskira_graph_render_pass_s *restrict r;
+	r = (struct miiskira_graph_render_pass_s *) refer_alloz(sizeof(struct miiskira_graph_render_pass_s));
+	if (r)
+	{
+		refer_set_free(r, (refer_free_f) miiskira_graph_render_pass_free_func);
+		if (hashmap_init(&r->a2i) && hashmap_init(&r->p2i))
+			return r;
+		refer_free(r);
+	}
+	return NULL;
+}
+
+static graph_render_pass_param_s* inner_miiskira_graph_parse_render_render_create_param(pocket_s *restrict p, const pocket_attr_t *restrict attachment, const pocket_attr_t *restrict subpass, const char *restrict color_name)
+{
+	const pocket_attr_t *restrict color;
+	uint64_t n;
+	uint32_t attachment_number, subpass_number, dependency_number, aref_number;
+	attachment_number = subpass_number = dependency_number = aref_number = 0;
+	if (attachment)
+		attachment_number = (uint32_t) attachment->size;
+	if (subpass)
+	{
+		subpass_number = (uint32_t) subpass->size;
+		n = subpass->size;
+		subpass = (const pocket_attr_t *) subpass->data.ptr;
+		while (n)
+		{
+			--n;
+			if ((color = pocket_find_tag(p, subpass, color_name, pocket_tag$index, NULL)))
+				aref_number += (uint32_t) color->size;
+			++subpass;
+		}
+	}
+	return graph_render_pass_param_alloc(attachment_number, subpass_number, dependency_number, aref_number);
+}
+
+static graph_format_t* inner_miiskira_graph_parse_render_render_create_get_format(graph_format_t *restrict format, const hashmap_t *restrict format_type, const char *restrict name)
+{
+	hashmap_vlist_t *restrict vl;
+	if (name && (vl = hashmap_find_name(format_type, name)))
+	{
+		*format = (graph_format_t) (uintptr_t) vl->value;
+		return format;
+	}
+	return NULL;
+}
+
+static graph_sample_count_t* inner_miiskira_graph_parse_render_render_create_get_sample(graph_sample_count_t *restrict sample, const char *restrict name)
+{
+	char *end;
+	uint32_t count;
+	if (name && (count = strtoul(name, &end, 0), !*end))
+	{
+		switch ((*sample = (graph_sample_count_t) count))
+		{
+			case graph_sample_count_1:
+			case graph_sample_count_2:
+			case graph_sample_count_4:
+			case graph_sample_count_8:
+			case graph_sample_count_16:
+			case graph_sample_count_32:
+			case graph_sample_count_64:
+				return sample;
+			default: break;
+		}
+	}
+	return NULL;
+}
+
+static graph_attachment_load_op_t* inner_miiskira_graph_parse_render_render_create_get_load(graph_attachment_load_op_t *restrict load, const char *restrict name)
+{
+	if (name)
+	{
+		if (!strcmp(name, "load"))
+		{
+			*load = graph_attachment_load_op_load;
+			return load;
+		}
+		else if (!strcmp(name, "clear"))
+		{
+			*load = graph_attachment_load_op_clear;
+			return load;
+		}
+		else if (!strcmp(name, "none"))
+		{
+			*load = graph_attachment_load_op_none;
+			return load;
+		}
+	}
+	return NULL;
+}
+
+static graph_attachment_store_op_t* inner_miiskira_graph_parse_render_render_create_get_store(graph_attachment_store_op_t *restrict store, const char *restrict name)
+{
+	if (name)
+	{
+		if (!strcmp(name, "store"))
+		{
+			*store = graph_attachment_store_op_store;
+			return store;
+		}
+		else if (!strcmp(name, "none"))
+		{
+			*store = graph_attachment_store_op_none;
+			return store;
+		}
+	}
+	return NULL;
+}
+
+static graph_image_layout_t* inner_miiskira_graph_parse_render_render_create_get_layout(graph_image_layout_t *restrict layout, const hashmap_t *restrict image_layout_type, const char *restrict name)
+{
+	hashmap_vlist_t *restrict vl;
+	if (name && (vl = hashmap_find_name(image_layout_type, name)))
+	{
+		*layout = (graph_image_layout_t) (uintptr_t) vl->value;
+		return layout;
+	}
+	return NULL;
+}
+
+static graph_render_pass_param_s* inner_miiskira_graph_parse_render_render_create_attachment(struct miiskira_graph_render_pass_s *restrict render, struct miiskira_graph_parser_s *restrict parser, uint32_t index, pocket_s *restrict p, const pocket_attr_t *restrict attachment)
+{
+	const pocket_attr_t *restrict v;
+	graph_format_t format;
+	graph_sample_count_t sample;
+	graph_attachment_load_op_t load, stencil_load;
+	graph_attachment_store_op_t store, stencil_store;
+	graph_image_layout_t initial, finally;
+	if (!pocket_is_tag(p, attachment, pocket_tag$index, NULL))
+		goto label_fail;
+	if (!attachment->name.string)
+		goto label_fail;
+	// format
+	if (!(v = pocket_find_tag(p, attachment, "format", pocket_tag$string, NULL)))
+		goto label_fail;
+	if (!inner_miiskira_graph_parse_render_render_create_get_format(&format, &parser->format_type, (const char *) v->data.ptr))
+		goto label_fail;
+	// sample
+	if (!(v = pocket_find_tag(p, attachment, "sample", pocket_tag$string, NULL)))
+		goto label_fail;
+	if (!inner_miiskira_graph_parse_render_render_create_get_sample(&sample, (const char *) v->data.ptr))
+		goto label_fail;
+	// load
+	if (!(v = pocket_find_tag(p, attachment, "load", pocket_tag$string, NULL)))
+		goto label_fail;
+	if (!inner_miiskira_graph_parse_render_render_create_get_load(&load, (const char *) v->data.ptr))
+		goto label_fail;
+	// store
+	if (!(v = pocket_find_tag(p, attachment, "store", pocket_tag$string, NULL)))
+		goto label_fail;
+	if (!inner_miiskira_graph_parse_render_render_create_get_store(&store, (const char *) v->data.ptr))
+		goto label_fail;
+	// stencil_load
+	stencil_load = graph_attachment_load_op_none;
+	if ((v = pocket_find(p, attachment, "stencil_load")))
+	{
+		if (!pocket_is_tag(p, v, pocket_tag$string, NULL))
+			goto label_fail;
+		if (!inner_miiskira_graph_parse_render_render_create_get_load(&stencil_load, (const char *) v->data.ptr))
+			goto label_fail;
+	}
+	// stencil_store
+	stencil_store = graph_attachment_store_op_none;
+	if ((v = pocket_find(p, attachment, "stencil_store")))
+	{
+		if (!pocket_is_tag(p, v, pocket_tag$string, NULL))
+			goto label_fail;
+		if (!inner_miiskira_graph_parse_render_render_create_get_store(&stencil_store, (const char *) v->data.ptr))
+			goto label_fail;
+	}
+	// initial
+	if (!(v = pocket_find_tag(p, attachment, "initial", pocket_tag$string, NULL)))
+		goto label_fail;
+	if (!inner_miiskira_graph_parse_render_render_create_get_layout(&initial, &parser->image_layout_type, (const char *) v->data.ptr))
+		goto label_fail;
+	// finally
+	if (!(v = pocket_find_tag(p, attachment, "finally", pocket_tag$string, NULL)))
+		goto label_fail;
+	if (!inner_miiskira_graph_parse_render_render_create_get_layout(&finally, &parser->image_layout_type, (const char *) v->data.ptr))
+		goto label_fail;
+	// okay ...
+	if (!hashmap_set_name(&render->a2i, attachment->name.string, (void *) (uintptr_t) index, NULL))
+		goto label_fail;
+	return graph_render_pass_param_set_attachment(render->param, index, format, sample, load, store, stencil_load, stencil_store, initial, finally);
+	label_fail:
+	log_warning("[graph] load render.render[].attachment (%s)", attachment->name.string);
+	return NULL;
+}
+
+static graph_render_pass_param_s* inner_miiskira_graph_parse_render_render_create_subpass(struct miiskira_graph_render_pass_s *restrict render, struct miiskira_graph_parser_s *restrict parser, uint32_t index, pocket_s *restrict p, const pocket_attr_t *restrict subpass, const char *restrict color_name)
+{
+	const pocket_attr_t *restrict v;
+	graph_pipeline_bind_point_t type;
+	if (!pocket_is_tag(p, subpass, pocket_tag$index, NULL))
+		goto label_fail;
+	if (!subpass->name.string)
+		goto label_fail;
+	// type
+	if (!(v = pocket_find_tag(p, subpass, "type", pocket_tag$string, NULL)))
+		goto label_fail;
+	if (!v->data.ptr)
+		goto label_fail;
+	if (!strcmp((const char *) v->data.ptr, "graphics"))
+		type = graph_pipeline_bind_point_graphics;
+	else if (!strcmp((const char *) v->data.ptr, "compute"))
+		type = graph_pipeline_bind_point_compute;
+	else goto label_fail;
+	if (!graph_render_pass_param_set_subpass(render->param, index, type))
+		goto label_fail;
+	// color
+	if ((v = pocket_find(p, subpass, color_name)))
+	{
+		uint32_t *restrict at_index;
+		graph_image_layout_t *restrict layout;
+		hashmap_vlist_t *restrict vl;
+		uint32_t i, n;
+		if (!pocket_is_tag(p, v, pocket_tag$index, NULL))
+			goto label_fail;
+		if ((n = (uint32_t) v->size))
+		{
+			v = (const pocket_attr_t *) v->data.ptr;
+			at_index = (uint32_t *) alloca(sizeof(uint32_t) * n);
+			layout = (uint32_t *) alloca(sizeof(graph_image_layout_t) * n);
+			if (!at_index || !layout)
+				goto label_fail;
+			for (i = 0; i < n; ++i)
+			{
+				if (!v[i].name.string)
+					goto label_fail;
+				if (!(vl = hashmap_find_name(&render->a2i, v[i].name.string)))
+					goto label_fail;
+				at_index[i] = (uint32_t) (uintptr_t) vl->value;
+				if (!inner_miiskira_graph_parse_render_render_create_get_layout(layout + i, &parser->image_layout_type, (const char *) v->data.ptr))
+					goto label_fail;
+			}
+			if (!graph_render_pass_param_set_subpass_color(render->param, index, n, at_index, layout))
+				goto label_fail;
+		}
+	}
+	// okay ...
+	if (!hashmap_set_name(&render->p2i, subpass->name.string, (void *) (uintptr_t) index, NULL))
+		goto label_fail;
+	return render->param;
+	label_fail:
+	log_warning("[graph] load render.render[].subpass (%s)", subpass->name.string);
+	return NULL;
+}
+
 static struct miiskira_graph_render_pass_s* inner_miiskira_graph_parse_render_render_create(struct miiskira_graph_s *restrict r, pocket_s *restrict p, const pocket_attr_t *restrict a)
 {
 	struct miiskira_graph_render_pass_s *restrict render;
+	const pocket_attr_t *restrict attachment;
+	const pocket_attr_t *restrict subpass;
+	const char *restrict color_name;
+	uint64_t n;
+	uint32_t index;
 	render = NULL;
 	if (!pocket_is_tag(p, a, pocket_tag$index, NULL))
 		goto label_fail;
-	// graph_render_pass_param_s* graph_render_pass_param_alloc(uint32_t attachment_number, uint32_t subpass_number, uint32_t dependency_number, uint32_t aref_number);
-	// graph_render_pass_param_s* graph_render_pass_param_set_attachment(graph_render_pass_param_s *restrict r, uint32_t index, graph_format_t format, graph_sample_count_t sample, graph_attachment_load_op_t load, graph_attachment_store_op_t store, graph_attachment_load_op_t stencil_load, graph_attachment_store_op_t stencil_store, graph_image_layout_t initial, graph_image_layout_t final);
-	// graph_render_pass_param_s* graph_render_pass_param_set_subpass(graph_render_pass_param_s *restrict r, uint32_t index, graph_pipeline_bind_point_t type);
-	// graph_render_pass_param_s* graph_render_pass_param_set_subpass_color(graph_render_pass_param_s *restrict r, uint32_t index, uint32_t n, uint32_t at_index[], graph_image_layout_t layout[]);
-	// graph_render_pass_s* graph_render_pass_alloc(graph_render_pass_param_s *restrict param, struct graph_dev_s *restrict dev);
+	if ((attachment = pocket_find(p, a, "attachment")) && !pocket_is_tag(p, attachment, pocket_tag$index, NULL))
+		goto label_fail;
+	if ((subpass = pocket_find(p, a, "subpass")) && !pocket_is_tag(p, subpass, pocket_tag$index, NULL))
+		goto label_fail;
+	color_name = "color";
+	if (!(render = inner_miiskira_graph_parse_render_render_create_render()))
+		goto label_fail;
+	if (!(render->param = inner_miiskira_graph_parse_render_render_create_param(p, attachment, subpass, color_name)))
+		goto label_fail;
+	if (attachment)
+	{
+		n = attachment->size;
+		attachment = (const pocket_attr_t *) attachment->data.ptr;
+		index = 0;
+		while (n)
+		{
+			--n;
+			if (!inner_miiskira_graph_parse_render_render_create_attachment(render, r->parser, index++, p, attachment))
+				goto label_fail;
+			++attachment;
+		}
+	}
+	if (subpass)
+	{
+		n = subpass->size;
+		subpass = (const pocket_attr_t *) subpass->data.ptr;
+		index = 0;
+		while (n)
+		{
+			--n;
+			if (!inner_miiskira_graph_parse_render_render_create_subpass(render, r->parser, index++, p, subpass, color_name))
+				goto label_fail;
+			++subpass;
+		}
+	}
+	if (!(render->render = graph_render_pass_alloc(render->param, r->device->dev)))
+		goto label_fail;
 	return render;
 	label_fail:
 	if (render) refer_free(render);
+	log_warning("[graph] load render.render (%s)", a->name.string);
 	return NULL;
 }
 
@@ -343,7 +640,7 @@ static struct miiskira_graph_s* inner_miiskira_graph_parse_render_render(struct 
 	return r;
 	label_fail:
 	if (render) refer_free(render);
-	log_error("[graph] load render.render (%s) fail", a->name.string?a->name.string:"");
+	log_warning("[graph] load render.render fail");
 	return NULL;
 }
 
@@ -442,6 +739,7 @@ static struct miiskira_graph_shader_s* inner_miiskira_graph_parse_render_shader_
 	return shader;
 	label_fail:
 	if (shader) refer_free(shader);
+	log_warning("[graph] load render.shader (%s) fail", a->name.string);
 	return NULL;
 }
 
@@ -472,7 +770,7 @@ static struct miiskira_graph_s* inner_miiskira_graph_parse_render_shader(struct 
 	return r;
 	label_fail:
 	if (shader) refer_free(shader);
-	log_error("[graph] load render.shader (%s) fail", a->name.string?a->name.string:"");
+	log_warning("[graph] load render.shader fail");
 	return NULL;
 }
 
@@ -562,6 +860,33 @@ static struct miiskira_graph_gpipe_s* inner_miiskira_graph_parse_render_gpipe_cr
 	return NULL;
 }
 
+static struct miiskira_graph_gpipe_s* inner_miiskira_graph_parse_render_gpipe_create_render(struct miiskira_graph_gpipe_s *restrict gpipe, struct miiskira_graph_s *restrict r, pocket_s *restrict p, const pocket_attr_t *restrict a)
+{
+	const pocket_attr_t *restrict v;
+	const char *restrict render_name, *restrict subpass_name;
+	struct miiskira_graph_render_pass_s *restrict render;
+	hashmap_vlist_t *restrict vl;
+	if (!(v = pocket_find_tag(p, a, "render", pocket_tag$string, NULL)))
+		goto label_fail;
+	if (!(render_name = (const char *) v->data.ptr))
+		goto label_fail;
+	if (!(v = pocket_find_tag(p, a, "subpass", pocket_tag$string, NULL)))
+		goto label_fail;
+	if (!(subpass_name = (const char *) v->data.ptr))
+		goto label_fail;
+	if (!(render = (struct miiskira_graph_render_pass_s *) hashmap_get_name(&r->render, render_name)))
+		goto label_fail;
+	if (!(vl = hashmap_find_name(&render->p2i, subpass_name)))
+		goto label_fail;
+	if (!inner_miiskira_graph_gpipe_set_render(gpipe, render->render, (uint32_t) (uintptr_t) vl->value))
+		goto label_fail;
+	log_verbose("[graph] render.g-pipe blend(%s).subpass(%s)", render_name, subpass_name);
+	return gpipe;
+	label_fail:
+	log_warning("[graph] render.g-pipe blend fail");
+	return NULL;
+}
+
 static struct miiskira_graph_gpipe_s* inner_miiskira_graph_parse_render_gpipe_create_dynamic(struct miiskira_graph_gpipe_s *restrict gpipe, pocket_s *restrict p, const pocket_attr_t *restrict a)
 {
 	graph_dynamic_t dynamic[graph_dynamic$number];
@@ -599,15 +924,23 @@ static struct miiskira_graph_gpipe_s* inner_miiskira_graph_parse_render_gpipe_cr
 		goto label_fail;
 	if (!inner_miiskira_graph_parse_render_gpipe_create_topology(gpipe, p, a))
 		goto label_fail;
+	if (!inner_miiskira_graph_gpipe_set_viewport(gpipe, r->viewport))
+		goto label_fail;
 	if (!inner_miiskira_graph_parse_render_gpipe_create_blend(gpipe, r, p, a))
+		goto label_fail;
+	if (!inner_miiskira_graph_parse_render_gpipe_create_render(gpipe, r, p, a))
 		goto label_fail;
 	if (!inner_miiskira_graph_parse_render_gpipe_create_dynamic(gpipe, p, a))
 		goto label_fail;
+	graph_gpipe_param_set_rasterization_polygon(gpipe->param, graph_polygon_mode_fill);
+	graph_gpipe_param_set_rasterization_cull(gpipe->param, graph_cull_mode_flags_back);
+	graph_gpipe_param_set_rasterization_front_face(gpipe->param, graph_front_face_clockwise);
 	if (!inner_miiskira_graph_gpipe_okay(gpipe))
 		goto label_fail;
 	return gpipe;
 	label_fail:
 	if (gpipe) refer_free(gpipe);
+	log_warning("[graph] load render.g-pipe (%s) fail", a->name.string);
 	return NULL;
 }
 
@@ -638,7 +971,7 @@ static struct miiskira_graph_s* inner_miiskira_graph_parse_render_gpipe(struct m
 	return r;
 	label_fail:
 	if (gpipe) refer_free(gpipe);
-	log_error("[graph] load render.g-pipe (%s) fail", a->name.string?a->name.string:"");
+	log_warning("[graph] load render.g-pipe fail");
 	return NULL;
 }
 

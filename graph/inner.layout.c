@@ -145,7 +145,7 @@ struct miiskira_graph_layout_s* inner_miiskira_graph_layout_append(struct miiski
 			vlist = vattr_insert_tail(layout->area, name, range);
 			refer_free(range);
 			if (!vlist) goto label_fail;
-			layout += size / type_size;
+			layout->attr_number += size / type_size;
 		}
 		return layout;
 	}
@@ -155,54 +155,58 @@ struct miiskira_graph_layout_s* inner_miiskira_graph_layout_append(struct miiski
 
 graph_vertex_input_description_s* inner_miiskira_graph_layout_get_vertex_desc(struct miiskira_graph_layout_s *restrict layout)
 {
-	if (!layout->vertex_desc)
+	graph_vertex_input_description_s *restrict vid;
+	struct miiskira_graph_range_s *restrict range;
+	vattr_vlist_t *restrict v;
+	uint32_t index, location, offset, size, nl;
+	graph_format_t format;
+	if (layout->vertex_desc)
+		goto label_okay;
+	if ((vid = graph_vertex_input_description_alloc(1, layout->attr_number)))
 	{
-		graph_vertex_input_description_s *restrict vid;
-		struct miiskira_graph_range_s *restrict range;
-		vattr_vlist_t *restrict v;
-		uint32_t index, location, offset, size, nl;
-		graph_format_t format;
-		if ((vid = graph_vertex_input_description_alloc(0, layout->attr_number)))
+		if (!graph_vertex_input_description_set_bind(vid, 0, 0, (uint32_t) layout->size, graph_vertex_input_rate_vertex))
+			goto label_fail;
+		index = location = 0;
+		for (v = layout->area->vattr; v; v = v->vattr_next)
 		{
-			graph_vertex_input_description_set_bind(vid, 0, 0, (uint32_t) layout->size, graph_vertex_input_rate_vertex);
-			index = location = 0;
-			for (v = layout->area->vattr; v; v = v->vattr_next)
+			range = (struct miiskira_graph_range_s *) v->value;
+			switch (range->type)
 			{
-				range = (struct miiskira_graph_range_s *) v->value;
-				switch (range->type)
-				{
-					#define d_case(_type, _format, _nl)  case miiskira_graph_layout_type__##_type: format = graph_format_##_format; nl = _nl; break
-					d_case(float,  r32_sfloat,          1);
-					d_case(vec2,   r32g32_sfloat,       1);
-					d_case(vec3,   r32g32b32_sfloat,    1);
-					d_case(vec4,   r32g32b32a32_sfloat, 1);
-					d_case(double, r64_sfloat,          2);
-					d_case(dvec2,  r64g64_sfloat,       2);
-					d_case(dvec3,  r64g64b64_sfloat,    2);
-					d_case(dvec4,  r64g64b64a64_sfloat, 2);
-					d_case(int,    r32_sint,            1);
-					d_case(ivec2,  r32g32_sint,         1);
-					d_case(ivec3,  r32g32b32_sint,      1);
-					d_case(ivec4,  r32g32b32a32_sint,   1);
-					d_case(uint,   r32_uint,            1);
-					d_case(uvec2,  r32g32_uint,         1);
-					d_case(uvec3,  r32g32b32_uint,      1);
-					d_case(uvec4,  r32g32b32a32_uint,   1);
-					#undef d_case
-					default: refer_free(vid); goto label_fail;
-				}
-				offset = (uint32_t) range->offset;
-				size = (uint32_t) range->size;
-				do {
-					graph_vertex_input_description_set_attr(vid, index++, location, 0, offset, format);
-					location += nl;
-					offset += (uint32_t) range->type_size;
-					size -= (uint32_t) range->type_size;
-				} while (size);
+				#define d_case(_type, _format, _nl)  case miiskira_graph_layout_type__##_type: format = graph_format_##_format; nl = _nl; break
+				d_case(float,  r32_sfloat,          1);
+				d_case(vec2,   r32g32_sfloat,       1);
+				d_case(vec3,   r32g32b32_sfloat,    1);
+				d_case(vec4,   r32g32b32a32_sfloat, 1);
+				d_case(double, r64_sfloat,          2);
+				d_case(dvec2,  r64g64_sfloat,       2);
+				d_case(dvec3,  r64g64b64_sfloat,    2);
+				d_case(dvec4,  r64g64b64a64_sfloat, 2);
+				d_case(int,    r32_sint,            1);
+				d_case(ivec2,  r32g32_sint,         1);
+				d_case(ivec3,  r32g32b32_sint,      1);
+				d_case(ivec4,  r32g32b32a32_sint,   1);
+				d_case(uint,   r32_uint,            1);
+				d_case(uvec2,  r32g32_uint,         1);
+				d_case(uvec3,  r32g32b32_uint,      1);
+				d_case(uvec4,  r32g32b32a32_uint,   1);
+				#undef d_case
+				default: goto label_fail;
 			}
-			layout->vertex_desc = vid;
+			offset = (uint32_t) range->offset;
+			size = (uint32_t) range->size;
+			do {
+				if (!graph_vertex_input_description_set_attr(vid, index++, location, 0, offset, format))
+					goto label_fail;
+				location += nl;
+				offset += (uint32_t) range->type_size;
+				size -= (uint32_t) range->type_size;
+			} while (size);
 		}
+		layout->vertex_desc = vid;
+		label_okay:
+		return layout->vertex_desc;
+		label_fail:
+		refer_free(vid);
 	}
-	label_fail:
-	return layout->vertex_desc;
+	return NULL;
 }
