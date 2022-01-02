@@ -9,6 +9,7 @@
 	"miiskira.log" @null
 	"import.refer" @null
 	"import.queue" @null
+	"miiskira.queue" @null
 	"import.posky" @null
 	"import.vattr" @null
 	"import.yaw" @null
@@ -22,14 +23,9 @@
 
 ["kiya.export"]
 	"miiskira$posky$stamp" @null
-	"miiskira$type$posky_task" @null
-	"miiskira$type$posky_return" @null
-	"miiskira$type$posky_clear_lonely" @null
 	"miiskira_posky_gen_type" @null
 	"miiskira_posky_feeding" @null
 	"miiskira_posky_feeding_proxy_adorable" @null
-	"miiskira_candy_alloc__posky_task" @null
-	"miiskira_candy_alloc__posky_return" @null
-	"miiskira_candy_append__posky_task" @null
-	"miiskira_candy_append__posky_return" @null
-	"miiskira_candy_alloc__posky_clear_lonely" @null
+	"miiskira_posky_feeding_clear_lonely" @null
+	"miiskira_posky_feeding_trick" @null
+	"miiskira_posky_feeding_foster_care" @null

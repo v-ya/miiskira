@@ -36,12 +36,12 @@ static void inner_miiskira_posky_thread(yaw_s *restrict yaw)
 	}
 }
 
-static posky_s* inner_miiskira_posky_alloc_create_posky(uintptr_t adorable_slot_size, uintptr_t posky_size, yaw_signal_s **restrict signal)
+static posky_s* inner_miiskira_posky_alloc_create_posky(uintptr_t adorable_slot_size, uintptr_t posky_size, yaw_signal_s *signal)
 {
 	queue_s *restrict q;
 	posky_s *restrict p;
 	p = NULL;
-	if ((q = inner_miiskira_posky_queue_alloc(posky_size, signal)))
+	if ((q = &miiskira_queue_alloc(posky_size, signal)->queue))
 	{
 		p = posky_alloc(q, adorable_slot_size);
 		refer_free(q);
@@ -49,12 +49,12 @@ static posky_s* inner_miiskira_posky_alloc_create_posky(uintptr_t adorable_slot_
 	return p;
 }
 
-posky_adorable_s* inner_miiskira_posky_alloc_create_adorable(posky_s *restrict posky, const char *restrict name, refer_t lady, uintptr_t adorable_posky_size, yaw_signal_s **restrict signal)
+static posky_adorable_s* inner_miiskira_posky_alloc_create_adorable(posky_s *restrict posky, const char *restrict name, refer_t lady, uintptr_t adorable_posky_size, yaw_signal_s *signal)
 {
 	queue_s *restrict q;
 	posky_adorable_s *restrict a;
 	a = NULL;
-	if ((q = inner_miiskira_posky_queue_alloc(adorable_posky_size, signal)))
+	if ((q = &miiskira_queue_alloc(adorable_posky_size, signal)->queue))
 	{
 		a = posky_create_adorable(posky, name, q, lady);
 		refer_free(q);
@@ -72,12 +72,12 @@ struct miiskira_posky_s* inner_miiskira_posky_alloc(uintptr_t adorable_slot_size
 		refer_set_free(r, (refer_free_f) inner_miiskira_posky_free_func);
 		if (!(r->signal = yaw_signal_alloc()))
 			goto label_fail;
-		if (!(r->posky = inner_miiskira_posky_alloc_create_posky(adorable_slot_size, posky_size, &r->signal)))
+		if (!(r->posky = inner_miiskira_posky_alloc_create_posky(adorable_slot_size, posky_size, r->signal)))
 			goto label_fail;
 		if (!(r->lady = (struct miiskira_posky_lady_s *) refer_alloc(sizeof(struct miiskira_posky_lady_s))))
 			goto label_fail;
 		r->lady->p = r;
-		if (!(r->adorable = inner_miiskira_posky_alloc_create_adorable(r->posky, miiskira$posky$posky, r->lady, adorable_posky_size, &r->signal)))
+		if (!(r->adorable = inner_miiskira_posky_alloc_create_adorable(r->posky, miiskira$posky$posky, r->lady, adorable_posky_size, r->signal)))
 			goto label_fail;
 		r->address = posky_adorable_address(r->adorable);
 		if (!inner_miiskira_posky_initial_adorable(r))
@@ -98,10 +98,10 @@ struct miiskira_posky_s* inner_miiskira_posky_alloc(uintptr_t adorable_slot_size
 static struct miiskira_posky_s* inner_miiskira_posky_initial_adorable(struct miiskira_posky_s *restrict r)
 {
 	#define d_set_way(_id)  posky_adorable_set_type_way(r->adorable, miiskira$type$##_id, (posky_feeding_f) inner_miiskira_posky_gift__##_id)
-	if (d_set_way(posky_task) &&
-		d_set_way(posky_return) &&
+	if (d_set_way(posky_proxy_adorable) &&
 		d_set_way(posky_clear_lonely) &&
-		d_set_way(posky_proxy_adorable))
+		d_set_way(posky_trick) &&
+		d_set_way(posky_foster_care))
 		return r;
 	return NULL;
 }

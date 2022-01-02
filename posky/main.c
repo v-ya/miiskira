@@ -3,17 +3,17 @@
 struct miiskira_posky_s *p;
 
 uint64_t miiskira$posky$stamp;
-uint32_t miiskira$type$posky_task;
-uint32_t miiskira$type$posky_return;
-uint32_t miiskira$type$posky_clear_lonely;
 uint32_t miiskira$type$posky_proxy_adorable;
+uint32_t miiskira$type$posky_clear_lonely;
+uint32_t miiskira$type$posky_trick;
+uint32_t miiskira$type$posky_foster_care;
 
 static inline void miiskira_posky_initial_type(void)
 {
-	miiskira$type$posky_task = miiskira_posky_gen_type();
-	miiskira$type$posky_return = miiskira_posky_gen_type();
-	miiskira$type$posky_clear_lonely = miiskira_posky_gen_type();
 	miiskira$type$posky_proxy_adorable = miiskira_posky_gen_type();
+	miiskira$type$posky_clear_lonely = miiskira_posky_gen_type();
+	miiskira$type$posky_trick = miiskira_posky_gen_type();
+	miiskira$type$posky_foster_care = miiskira_posky_gen_type();
 }
 
 const char* miiskira_posky_initial(uintptr_t argc, const char *const argv[])
