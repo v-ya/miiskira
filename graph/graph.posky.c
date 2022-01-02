@@ -1,8 +1,9 @@
 #include "graph.posky.h"
 #include "../posky/posky.h"
+#include "../queue/queue.h"
 #include "../define.h"
 
-static posky_adorable_s* inner_miiskira_graph_posky_initial_adorable(posky_adorable_s *restrict adorable, posky_s *restrict posky, struct miiskira_graph_s *restrict lady)
+static posky_adorable_s* inner_miiskira_graph_posky_initial_adorable(posky_adorable_s *restrict adorable)
 {
 	if (
 		#define d_type_way(_id)  posky_adorable_set_type_way(adorable, miiskira$type$graph_##_id, (posky_feeding_f) inner_miiskira_graph__##_id)
@@ -17,22 +18,28 @@ static posky_adorable_s* inner_miiskira_graph_posky_initial_adorable(posky_adora
 	return NULL;
 }
 
-struct miiskira_graph_s* inner_miiskira_graph_register_posky(struct miiskira_graph_s *restrict graph, uintptr_t queue_size)
+static void inner_miiskira_graph_posky_trick(posky_s *restrict posky, refer_t lady)
 {
-	struct miiskira_graph_s *r;
-	struct miiskira_candy__posky_task_s *restrict candy;
-	r = NULL;
-	if ((candy = miiskira_candy_alloc__posky_task(1)))
+	extern uintptr_t graph_posky_adorable_size;
+	posky_adorable_s *restrict adorable;
+	miiskira_queue_s *restrict queue;
+	posky_adorable_s *trick_okay;
+	trick_okay = NULL;
+	if ((queue = miiskira_queue_alloc(graph_posky_adorable_size, NULL)))
 	{
-		if (miiskira_candy_append__posky_task(candy, miiskira_posky_task_id__create_adorable,
-			miiskira$posky$graph, 0, NULL, 0, queue_size, graph,
-			(miiskira_posky_initial_adorable_f) inner_miiskira_graph_posky_initial_adorable))
+		if ((adorable = posky_create_adorable(posky, miiskira$posky$graph, &queue->queue, lady)))
 		{
-			candy->candy.report = candy->candy.target;
-			miiskira_posky_feeding(&candy->candy);
-			r = graph;
+			if ((trick_okay = inner_miiskira_graph_posky_initial_adorable(adorable)))
+				miiskira_posky_feeding_foster_care(adorable, queue->signal, NULL, NULL, posky_adorable_address(adorable));
+			refer_free(adorable);
 		}
-		refer_free(candy);
+		refer_free(queue);
 	}
-	return r;
+	if (!trick_okay)
+		log_warning("[graph] posky trick register self fail");
+}
+
+void inner_miiskira_graph_register_posky(struct miiskira_graph_s *restrict graph)
+{
+	miiskira_posky_feeding_trick(inner_miiskira_graph_posky_trick, graph, 0);
 }

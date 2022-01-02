@@ -140,7 +140,7 @@ struct miiskira_graph_s* inner_miiskira_graph_alloc(mlog_s *ml, uint32_t debug_l
 
 // graph.posky.c
 
-struct miiskira_graph_s* inner_miiskira_graph_register_posky(struct miiskira_graph_s *restrict graph, uintptr_t queue_size);
+void inner_miiskira_graph_register_posky(struct miiskira_graph_s *restrict graph);
 
 // graph.render.c
 

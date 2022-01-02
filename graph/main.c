@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 struct miiskira_graph_s *graph;
+uintptr_t graph_posky_adorable_size;
 
 // type
 uint32_t miiskira$type$graph_present_create;
@@ -35,14 +36,13 @@ const char* miiskira_graph_initial(uintptr_t argc, const char *const argv[])
 {
 	uint32_t debug_level;
 	debug_level = miiskira_graph_initial_get_debug_level(argc, argv);
+	graph_posky_adorable_size = 1024;
 	miiskira_graph_initial_type();
 	if ((graph = inner_miiskira_graph_alloc(miiskira$log$verbose, debug_level)))
 	{
-		if (inner_miiskira_graph_register_posky(graph, 1024))
-		{
-			if (miiskira_graph_initial_tag())
-				return NULL;
-		}
+		inner_miiskira_graph_register_posky(graph);
+		if (miiskira_graph_initial_tag())
+			return NULL;
 		refer_free(graph);
 	}
 	return "miiskira.graph.initial";
