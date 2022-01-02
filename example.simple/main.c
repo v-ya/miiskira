@@ -1,5 +1,6 @@
 #include <xwindow.h>
 #include <yaw.h>
+#include "../log/log.h"
 #include "../posky/posky.h"
 #include "../graph/graph.h"
 #include "../define.h"
@@ -91,6 +92,7 @@ static void thread(yaw_s *restrict yaw)
 {
 	inst_s *restrict inst;
 	inst = (inst_s *) yaw->data;
+	log_info("[miiskira.example.simple] thread start ...");
 	while (yaw->running)
 	{
 		miiskira_graph_present_do(inst->graph_address, inst->name, 0);
@@ -98,7 +100,7 @@ static void thread(yaw_s *restrict yaw)
 	}
 }
 
-static posky_adorable_s* initial_adorable(posky_adorable_s *restrict adorable, posky_s *restrict posky, inst_s *restrict inst)
+static void posky_trick(posky_s *restrict posky, inst_s *restrict inst)
 {
 	uint32_t width, height;
 	inst->graph_address = posky_address_adorable(posky, miiskira$posky$graph);
@@ -107,38 +109,16 @@ static posky_adorable_s* initial_adorable(posky_adorable_s *restrict adorable, p
 		miiskira_graph_present_create_bgra(inst->graph_address, inst->name, (miiskira_graph_present_f) inst_present_func, inst->xw);
 		miiskira_graph_present_resize(inst->graph_address, inst->name, width, height);
 		miiskira_graph_present_do(inst->graph_address, inst->name, 0);
-		if ((inst->yaw = yaw_alloc_and_start(thread, NULL, inst)))
-			return adorable;
+		inst->yaw = yaw_alloc_and_start(thread, NULL, inst);
 	}
-	return NULL;
-}
-
-static inst_s* initial_create_adorable(inst_s *restrict inst)
-{
-	struct inst_s *r;
-	struct miiskira_candy__posky_task_s *restrict candy;
-	r = NULL;
-	if ((candy = miiskira_candy_alloc__posky_task(1)))
-	{
-		if (miiskira_candy_append__posky_task(candy, miiskira_posky_task_id__create_adorable,
-			NULL, 0, NULL, 0, 1024, inst,
-			(miiskira_posky_initial_adorable_f) initial_adorable))
-		{
-			miiskira_posky_feeding(&candy->candy);
-			r = inst;
-		}
-		refer_free(candy);
-	}
-	return r;
 }
 
 const char* initial(uintptr_t argc, const char *const argv[])
 {
 	if (__inst)
 	{
-		if (initial_create_adorable(__inst))
-			return NULL;
-		refer_free(__inst);
+		miiskira_posky_feeding_trick((miiskira_posky_trick_f) posky_trick, __inst, 0);
+		return NULL;
 	}
 	return "miiskira.example.simple.initial";
 }
