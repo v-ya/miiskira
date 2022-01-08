@@ -267,6 +267,17 @@
 				#     "compute"
 			# ...
 
+# 添加光栅化参数
+["rasterization" rasterization]
+	[rasterization "name" rasterization-define]
+		"depth_clamp" @null                             # (可选) 是否启用深度钳制，默认否
+		"discard" @null                                 # (可选) 是否在光栅化前丢弃基元，默认否
+		"polygon" @string => "fill"                     # (可选) 三角形渲染模式 ("fill" "line" "point")
+		"cull" @string => "none"                        # (可选) 剔除 ("none" "front" "back")
+		"front_face" @string => "+"                     # (可选) 如何确定三角形正面 ("+" => 逆时针 "-" => 顺时针)
+		"depth_bias" @f32 => (f32[3]) { 0.0, 0.0, 0.0 } # (可选) 是否启用深度偏置 { slope, constant, clamp }
+		"line_width" @f32 => (f32[1]) { 1.0 }           # (可选) 绘制线宽
+
 # 添加着色器
 ["shader" shader]
 	[shader "name" shader-define]
@@ -321,6 +332,7 @@
 		"blend" @string => "blend-name"
 		"render" @string => "render-name"
 		"subpass" @string => "render.p-name"
+		"rasterization" @string => "rasterization-name"
 		[g-pipe-define "dynamic" g-pipe-dynamic]
 			# (可选) 设置动态属性
 			# 下发属性均可选，存在则启用

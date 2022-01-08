@@ -644,6 +644,133 @@ static struct miiskira_graph_s* inner_miiskira_graph_parse_render_render(struct 
 	return NULL;
 }
 
+// rasterization
+
+static struct miiskira_graph_rasterization_s* inner_miiskira_graph_parse_render_rasterization_create(pocket_s *restrict p, const pocket_attr_t *restrict a)
+{
+	struct miiskira_graph_rasterization_s *restrict rasterization;
+	const pocket_attr_t *restrict v;
+	const char *restrict s;
+	rasterization = NULL;
+	if (!pocket_is_tag(p, a, pocket_tag$index, NULL))
+		goto label_fail;
+	if (!(rasterization = (struct miiskira_graph_rasterization_s *) refer_alloz(sizeof(struct miiskira_graph_rasterization_s))))
+		goto label_fail;
+	rasterization->polygon = graph_polygon_mode_fill;
+	rasterization->cull = graph_cull_mode_flags_none;
+	rasterization->front_face = graph_front_face_counter_clockwise;
+	rasterization->depth_bias_constant_factor = 0;
+	rasterization->depth_bias_clamp = 0;
+	rasterization->depth_bias_slope_factor = 0;
+	rasterization->line_width = 1.0;
+	// depth_clamp
+	if (pocket_find(p, a, "depth_clamp"))
+		rasterization->depth_clamp = 1;
+	// discard
+	if (pocket_find(p, a, "discard"))
+		rasterization->discard = 1;
+	// polygon
+	if ((v = pocket_find(p, a, "polygon")))
+	{
+		if (!pocket_is_tag(p, v, pocket_tag$string, NULL))
+			goto label_fail;
+		if (!(s = (const char *) v->data.ptr))
+			goto label_fail;
+		if (!strcmp(s, "fill"))
+			rasterization->polygon = graph_polygon_mode_fill;
+		else if (!strcmp(s, "line"))
+			rasterization->polygon = graph_polygon_mode_line;
+		else if (!strcmp(s, "point"))
+			rasterization->polygon = graph_polygon_mode_point;
+		else goto label_fail;
+	}
+	// cull
+	if ((v = pocket_find(p, a, "cull")))
+	{
+		if (!pocket_is_tag(p, v, pocket_tag$string, NULL))
+			goto label_fail;
+		if (!(s = (const char *) v->data.ptr))
+			goto label_fail;
+		if (!strcmp(s, "none"))
+			rasterization->cull = graph_cull_mode_flags_none;
+		else if (!strcmp(s, "front"))
+			rasterization->cull = graph_cull_mode_flags_front;
+		else if (!strcmp(s, "back"))
+			rasterization->cull = graph_cull_mode_flags_back;
+		else goto label_fail;
+	}
+	// front_face
+	if ((v = pocket_find(p, a, "front_face")))
+	{
+		if (!pocket_is_tag(p, v, pocket_tag$string, NULL))
+			goto label_fail;
+		if (!(s = (const char *) v->data.ptr))
+			goto label_fail;
+		if (s[0] == '+' && !s[1])
+			rasterization->front_face = graph_front_face_counter_clockwise;
+		else if (s[0] == '-' && !s[1])
+			rasterization->front_face = graph_front_face_clockwise;
+		else goto label_fail;
+	}
+	// depth_bias
+	if ((v = pocket_find(p, a, "depth_bias")))
+	{
+		if (!pocket_is_tag(p, v, pocket_tag$f32, NULL))
+			goto label_fail;
+		if (v->size != sizeof(float) * 3)
+			goto label_fail;
+		rasterization->depth_bias_slope_factor = ((const float *) v->data.ptr)[0];
+		rasterization->depth_bias_constant_factor = ((const float *) v->data.ptr)[1];
+		rasterization->depth_bias_clamp = ((const float *) v->data.ptr)[2];
+		rasterization->depth_bias = 1;
+	}
+	// line_width
+	if ((v = pocket_find(p, a, "line_width")))
+	{
+		if (!pocket_is_tag(p, v, pocket_tag$f32, NULL))
+			goto label_fail;
+		if (v->size != sizeof(float))
+			goto label_fail;
+		rasterization->line_width = *((const float *) v->data.ptr);
+	}
+	return rasterization;
+	label_fail:
+	if (rasterization) refer_free(rasterization);
+	log_warning("[graph] load render.rasterization (%s) fail", a->name.string);
+	return NULL;
+}
+
+static struct miiskira_graph_s* inner_miiskira_graph_parse_render_rasterization(struct miiskira_graph_s *restrict r, pocket_s *restrict p, const pocket_attr_t *restrict a)
+{
+	struct miiskira_graph_rasterization_s *restrict rasterization;
+	uint64_t n;
+	rasterization = NULL;
+	if (!pocket_is_tag(p, a, pocket_tag$index, NULL))
+		goto label_fail;
+	n = a->size;
+	a = (const pocket_attr_t *) a->data.ptr;
+	while (n)
+	{
+		--n;
+		if (!a->name.string)
+			goto label_fail;
+		if (hashmap_find_name(&r->rasterization, a->name.string))
+			goto label_fail;
+		if (!(rasterization = inner_miiskira_graph_parse_render_rasterization_create(p, a)))
+			goto label_fail;
+		if (!hashmap_set_name(&r->rasterization, a->name.string, rasterization, inner_miiskira_graph_hashmap_free_func))
+			goto label_fail;
+		rasterization = NULL;
+		log_info("[graph] load render.rasterization (%s)", a->name.string);
+		++a;
+	}
+	return r;
+	label_fail:
+	if (rasterization) refer_free(rasterization);
+	log_warning("[graph] load render.rasterization fail");
+	return NULL;
+}
+
 // shader
 
 static struct miiskira_graph_layout_s* inner_miiskira_graph_parse_render_shader_get_layout(struct miiskira_graph_s *restrict r, pocket_s *restrict p, const pocket_attr_t *restrict a)
@@ -887,6 +1014,24 @@ static struct miiskira_graph_gpipe_s* inner_miiskira_graph_parse_render_gpipe_cr
 	return NULL;
 }
 
+static struct miiskira_graph_gpipe_s* inner_miiskira_graph_parse_render_gpipe_create_rasterization(struct miiskira_graph_gpipe_s *restrict gpipe, struct miiskira_graph_s *restrict r, pocket_s *restrict p, const pocket_attr_t *restrict a)
+{
+	struct miiskira_graph_rasterization_s *restrict rasterization;
+	if (!(a = pocket_find_tag(p, a, "rasterization", pocket_tag$string, NULL)))
+		goto label_fail;
+	if (!a->data.ptr)
+		goto label_fail;
+	if (!(rasterization = (struct miiskira_graph_rasterization_s *) hashmap_get_name(&r->rasterization, (const char *) a->data.ptr)))
+		goto label_fail;
+	if (!inner_miiskira_graph_gpipe_set_rasterization(gpipe, rasterization))
+		goto label_fail;
+	log_verbose("[graph] render.g-pipe rasterization(%s)", (const char *) a->data.ptr);
+	return gpipe;
+	label_fail:
+	log_warning("[graph] render.g-pipe rasterization fail");
+	return NULL;
+}
+
 static struct miiskira_graph_gpipe_s* inner_miiskira_graph_parse_render_gpipe_create_dynamic(struct miiskira_graph_gpipe_s *restrict gpipe, pocket_s *restrict p, const pocket_attr_t *restrict a)
 {
 	graph_dynamic_t dynamic[graph_dynamic$number];
@@ -930,11 +1075,10 @@ static struct miiskira_graph_gpipe_s* inner_miiskira_graph_parse_render_gpipe_cr
 		goto label_fail;
 	if (!inner_miiskira_graph_parse_render_gpipe_create_render(gpipe, r, p, a))
 		goto label_fail;
+	if (!inner_miiskira_graph_parse_render_gpipe_create_rasterization(gpipe, r, p, a))
+		goto label_fail;
 	if (!inner_miiskira_graph_parse_render_gpipe_create_dynamic(gpipe, p, a))
 		goto label_fail;
-	graph_gpipe_param_set_rasterization_polygon(gpipe->param, graph_polygon_mode_fill);
-	graph_gpipe_param_set_rasterization_cull(gpipe->param, graph_cull_mode_flags_back);
-	graph_gpipe_param_set_rasterization_front_face(gpipe->param, graph_front_face_clockwise);
 	if (!inner_miiskira_graph_gpipe_okay(gpipe))
 		goto label_fail;
 	return gpipe;
@@ -982,6 +1126,7 @@ hashmap_t* inner_miiskira_graph_initial_render_parser(hashmap_t *restrict parser
 	if (hashmap_set_name(parser, "layout", inner_miiskira_graph_parse_render_layout, NULL) &&
 		hashmap_set_name(parser, "blend", inner_miiskira_graph_parse_render_blend, NULL) &&
 		hashmap_set_name(parser, "render", inner_miiskira_graph_parse_render_render, NULL) &&
+		hashmap_set_name(parser, "rasterization", inner_miiskira_graph_parse_render_rasterization, NULL) &&
 		hashmap_set_name(parser, "shader", inner_miiskira_graph_parse_render_shader, NULL) &&
 		hashmap_set_name(parser, "g-pipe", inner_miiskira_graph_parse_render_gpipe, NULL))
 		return parser;

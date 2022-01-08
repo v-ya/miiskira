@@ -77,6 +77,20 @@ struct miiskira_graph_render_pass_s {
 	hashmap_t p2i; // subpass-name    => index
 };
 
+// 光栅化
+struct miiskira_graph_rasterization_s {
+	graph_bool_t depth_clamp;
+	graph_bool_t discard;
+	graph_polygon_mode_t polygon;
+	graph_cull_mode_flags_t cull;
+	graph_front_face_t front_face;
+	graph_bool_t depth_bias;
+	float depth_bias_constant_factor;
+	float depth_bias_clamp;
+	float depth_bias_slope_factor;
+	float line_width;
+};
+
 // 着色器
 struct miiskira_graph_shader_s {
 	graph_shader_type_t type;
@@ -109,12 +123,13 @@ struct miiskira_graph_s {
 	struct miiskira_graph_device_s *device;
 	struct miiskira_graph_parser_s *parser;
 	graph_viewports_scissors_s *viewport;
-	hashmap_t layout;   // name => miiskira_graph_layout_s
-	hashmap_t blend;    // name => graph_pipe_color_blend_s
-	hashmap_t render;   // name => miiskira_graph_render_pass_s
-	hashmap_t shader;   // name => miiskira_graph_shader_s
-	hashmap_t gpipe;    // name => miiskira_graph_gpipe_s
-	hashmap_t present;  // name => miiskira_graph_present_s
+	hashmap_t layout;        // name => miiskira_graph_layout_s
+	hashmap_t blend;         // name => graph_pipe_color_blend_s
+	hashmap_t render;        // name => miiskira_graph_render_pass_s
+	hashmap_t rasterization; // name => miiskira_graph_rasterization_s
+	hashmap_t shader;        // name => miiskira_graph_shader_s
+	hashmap_t gpipe;         // name => miiskira_graph_gpipe_s
+	hashmap_t present;       // name => miiskira_graph_present_s
 };
 
 struct pocket_s;
@@ -181,6 +196,7 @@ struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_set_viewport(struct mi
 struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_set_blend(struct miiskira_graph_gpipe_s *restrict r, graph_pipe_color_blend_s *restrict blend);
 struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_set_render(struct miiskira_graph_gpipe_s *restrict r, graph_render_pass_s *restrict render, uint32_t index);
 struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_set_dynamic(struct miiskira_graph_gpipe_s *restrict r, uint32_t n, const graph_dynamic_t dynamic[]);
+struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_set_rasterization(struct miiskira_graph_gpipe_s *restrict r, const struct miiskira_graph_rasterization_s *restrict rasterization);
 struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_okay(struct miiskira_graph_gpipe_s *restrict r);
 
 #endif

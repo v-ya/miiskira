@@ -241,16 +241,24 @@ struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_set_dynamic(struct mii
 	return NULL;
 }
 
+struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_set_rasterization(struct miiskira_graph_gpipe_s *restrict r, const struct miiskira_graph_rasterization_s *restrict rasterization)
+{
+	graph_gpipe_param_s *restrict param;
+	param = r->param;
+	graph_gpipe_param_set_rasterization_depth_clamp(param, rasterization->depth_clamp);
+	graph_gpipe_param_set_rasterization_discard(param, rasterization->discard);
+	graph_gpipe_param_set_rasterization_polygon(param, rasterization->polygon);
+	graph_gpipe_param_set_rasterization_cull(param, rasterization->cull);
+	graph_gpipe_param_set_rasterization_front_face(param, rasterization->front_face);
+	if (rasterization->depth_bias)
+		graph_gpipe_param_set_rasterization_depth_bias(param, rasterization->depth_bias_constant_factor, rasterization->depth_bias_clamp, rasterization->depth_bias_slope_factor);
+	graph_gpipe_param_set_rasterization_line_width(param, rasterization->line_width);
+	return r;
+}
+
 struct miiskira_graph_gpipe_s* inner_miiskira_graph_gpipe_okay(struct miiskira_graph_gpipe_s *restrict r)
 {
 	if (r->pipe) goto label_okay;
-	// graph_gpipe_param_set_rasterization_depth_clamp();
-	// graph_gpipe_param_set_rasterization_discard();
-	// graph_gpipe_param_set_rasterization_polygon();
-	// graph_gpipe_param_set_rasterization_cull();
-	// graph_gpipe_param_set_rasterization_front_face();
-	// graph_gpipe_param_set_rasterization_depth_bias();
-	// graph_gpipe_param_set_rasterization_line_width();
 	// graph_gpipe_param_set_multisample_sample_shading();
 	// graph_gpipe_param_set_multisample_min_sample_shading();
 	// graph_gpipe_param_set_multisample_alpha2coverage();
