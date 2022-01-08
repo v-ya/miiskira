@@ -331,13 +331,13 @@
 		# 设置色彩混合
 		"blend" @string => "blend-name"
 		"render" @string => "render-name"
-		"subpass" @string => "render.p-name"
+		"subpass" @string => "render(render-name).p-name"
 		"rasterization" @string => "rasterization-name"
 		[g-pipe-define "dynamic" g-pipe-dynamic]
 			# (可选) 设置动态属性
 			# 下发属性均可选，存在则启用
-			"line_width" @null           # 线宽
-			"depth_bias" @null           #
+			"line_width" @null           # 线宽 (rasterization.line_width)
+			"depth_bias" @null           # 深度偏置 (rasterization.depth_bias)
 			"blend_constants" @null      # 混合常量 (blend.color)
 			"depth_bounds" @null         #
 			"stencil_compare_mask" @null #
