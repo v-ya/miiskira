@@ -28,3 +28,4 @@
 		"blend" @string => "default"
 		"render" @string => "default"
 		"subpass" @string => "p-color"
+		"rasterization" @string => "default"

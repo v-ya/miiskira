@@ -48,3 +48,6 @@
 				[~ "color"]
 					"a-color" @string => "color_attachment_optimal"
 
+# rasterization
+["rasterization" rasterization]
+	[rasterization "default"]
